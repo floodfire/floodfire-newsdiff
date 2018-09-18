@@ -39,8 +39,11 @@ class LtnListCrawler(BaseListCrawler):
             news.append(raw)
         return news
 
-    def count_page(self):
-        pass
+    def get_last(self, soup):
+        last_a_tag = soup.find('div', class_='pagination').find('a', class_='p_last')
+        href_uri = last_a_tag['href']
+        last_page = href_uri.rsplit('/', 1)[-1]
+        return int(last_page)
 
     def get_category(self, news_row):
         cate_list = []
@@ -54,5 +57,7 @@ class LtnListCrawler(BaseListCrawler):
         soup = BeautifulSoup(html, 'html.parser')
         news = self.fetch_list(soup)
         print(news)
+        last_page = self.get_last(soup)
+        print(last_page)
 
         
