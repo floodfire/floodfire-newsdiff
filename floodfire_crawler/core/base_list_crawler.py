@@ -30,7 +30,7 @@ class BaseListCrawler(metaclass=ABCMeta):
         return NotImplemented
 
     @abstractmethod
-    def count_page(self):
+    def get_last(self):
         """
         傳回 List 的總頁數
         """
