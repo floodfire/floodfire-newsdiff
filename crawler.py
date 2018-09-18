@@ -1,9 +1,16 @@
 #!/usr/bin/env python3
 
+import os
 from argparse import ArgumentParser
 from floodfire_crawler.engine.ltn_list_crawler import LtnListCrawler
+from configparser import ConfigParser
 
 class Crawler():
+    def __init__(self):
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        self.config = ConfigParser()
+        self.config.read(dir_path + '/config.ini')
+        
     def __ltn(self, args):
         llc = LtnListCrawler()
         llc.url = 'http://news.ltn.com.tw/list/breakingnews'
