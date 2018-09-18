@@ -10,3 +10,25 @@ pipenv --python 3.6
 ```
 pipenv install
 ```
+
+## 安裝 mysqlclient
+1. 安裝 gcc 編譯環境
+因為 mysqlclient 底層是使用 c 語言撰寫，所以需要 c 的編譯環境
+```bash
+sudo apt install build-essential
+```
+
+2. 安裝 python3-dev
+```bash
+sudo apt install python3-dev
+```
+
+3. 安裝 mariadb C 語言 head
+```bash
+sudo apt install libmariadbclient-dev
+```
+
+4. 安裝 mysqlclient
+```
+pipenv install mysqlclient
+```
