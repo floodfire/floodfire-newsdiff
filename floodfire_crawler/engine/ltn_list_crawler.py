@@ -2,7 +2,7 @@
 
 import requests
 from bs4 import BeautifulSoup
-from base_list_crawler import BaseListCrawler
+from floodfire_crawler.core.base_list_crawler import BaseListCrawler
 
 class LtnListCrawler(BaseListCrawler):
 
