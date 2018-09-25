@@ -12,7 +12,7 @@ class Crawler():
         self.config.read(dir_path + '/config.ini')
         
     def __ltn(self, args):
-        llc = LtnListCrawler()
+        llc = LtnListCrawler(self.config)
         llc.url = 'http://news.ltn.com.tw/list/breakingnews'
         llc.run()
 

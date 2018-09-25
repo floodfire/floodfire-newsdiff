@@ -4,6 +4,7 @@ import requests
 from bs4 import BeautifulSoup
 from hashlib import md5
 from floodfire_crawler.core.base_list_crawler import BaseListCrawler
+from floodfire_crawler.storage.rdb_storage import FloodfireStorage
 
 class LtnListCrawler(BaseListCrawler):
 
@@ -14,6 +15,9 @@ class LtnListCrawler(BaseListCrawler):
     @url.setter
     def url(self, value):
         self._url = value
+
+    def __init__(self, config):
+        self.floodfire_storage = FloodfireStorage(config)
 
     def fetch_html(self):
         req = requests.get(self.url)
@@ -55,8 +59,11 @@ class LtnListCrawler(BaseListCrawler):
     def run(self):
         html = self.fetch_html()
         soup = BeautifulSoup(html, 'html.parser')
-        news = self.fetch_list(soup)
-        print(news)
+        news_list = self.fetch_list(soup)
+        print(news_list)
+        for news in news_list:
+            self.floodfire_storage.insert_list(news)
+            
         last_page = self.get_last(soup)
         print(last_page)
 

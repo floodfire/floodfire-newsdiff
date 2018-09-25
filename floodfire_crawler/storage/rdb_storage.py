@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import MySQLdb
+import time
 
 class FloodfireStorage():
     def __init__(self, config):
@@ -19,15 +20,15 @@ class FloodfireStorage():
         sql = "INSERT INTO `list` (`url`, `url_md5`, `source_id`, `category`, `created_at`)\
                VALUES (:url, :url_md5, :source_id, :category, :created_at);"
         params = {
-            "url": news_row[''],
-            "url_md5": news_row[''],
-            "source_id": news_row[''],
-            "category": news_row[''],
-            "created_at": news_row['']
+            "url": news_row['url'],
+            "url_md5": news_row['url_md5'],
+            "source_id": news_row['source_id'],
+            "category": news_row['category'],
+            "created_at": time.strftime('%Y-%m-%d %H:%M:%S')
         }
 
         try:
-            self.cur.execute()
+            self.cur.execute(sql, params)
         except MySQLdb.OperationalError:
             print('Error! Insert new list error!')
 
