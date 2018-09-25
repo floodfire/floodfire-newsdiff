@@ -35,7 +35,14 @@ class FloodfireStorage():
             print('Error! Insert new list error!')
 
     def check_list(self, url_hash):
-        pass
+        sql = "SELECT * FROM `list` WHERE `url_md5`=%s"
+        try:
+            self.cur.execute(sql, (url_hash,))
+            row_count = self.cur.rowcount
+
+        except MySQLdb.OperationalError:
+            print('Error! Insert new list error!')
+        return row_count
 
     def get_source_list(self):
         pass
