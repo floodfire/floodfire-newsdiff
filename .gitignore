@@ -106,3 +106,6 @@ venv.bak/
 # Editor files
 .idea/
 .vscode
+
+# ini config file
+*.ini
