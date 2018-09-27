@@ -7,7 +7,7 @@ from time import sleep
 from floodfire_crawler.core.base_list_crawler import BaseListCrawler
 from floodfire_crawler.storage.rdb_storage import FloodfireStorage
 
-class LtnListCrawler(BaseListCrawler):
+class ApdListCrawler(BaseListCrawler):
 
     @property
     def url(self):
@@ -29,41 +29,29 @@ class LtnListCrawler(BaseListCrawler):
 
     def fetch_list(self, soup):
         news = []
-        news_rows = soup.find('ul', 'imm').find_all('li')
+        news_rows = soup.find_all("li", {"class": "rtddt"})
         #md5hash = md5()
         for news_row in news_rows:
-            link_a = news_row.find('a', class_='tit')
+            link_a = news_row.find('a')
             md5hash = md5(link_a['href'].encode('utf-8')).hexdigest()
             raw = {
-                'title': link_a.p.text.strip(),
+                'title': link_a.font.text.strip().replace("　"," ").replace("\u200b",""),
                 'url': link_a['href'],
                 'url_md5': md5hash,
-                'source_id': 5,
-                'category': self.get_category(news_row)
+                'source_id': 1,
+                'category': link_a.h2.text
             }
             news.append(raw)
         return news
 
-    def get_last(self, soup):
-        last_a_tag = soup.find('div', class_='pagination').find('a', class_='p_last')
-        href_uri = last_a_tag['href']
-        last_page = href_uri.rsplit('/', 1)[-1]
-        return int(last_page)
-
-    def get_category(self, news_row):
-        cate_list = []
-        categories = news_row.find('div', class_='tagarea').find_all('a')
-        for category in categories:
-            cate_list.append(category.text)
-        return ','.join(cate_list)
-
-    def make_a_round(self, start_page, end_page):
+    def make_a_round(self):
         consecutive = 0
+        start_page = 1
         for page in range(start_page, end_page+1):
             if consecutive > 20:
                 print('News consecutive more than 20, stop crawler!!')
                 break
-            page_url = self.url + '/all/' + str(page)
+            page_url = self.url + '/realtime/' + str(page)
             print(page_url)
             sleep(2)
             html = self.fetch_html(page_url)
@@ -82,8 +70,7 @@ class LtnListCrawler(BaseListCrawler):
     def run(self):
         html = self.fetch_html(self.url)
         soup = BeautifulSoup(html, 'html.parser')
-        last_page = self.get_last(soup)
-        self.make_a_round(1, last_page)
+        self.make_a_round()
         """
         news_list = self.fetch_list(soup)
         print(news_list)
