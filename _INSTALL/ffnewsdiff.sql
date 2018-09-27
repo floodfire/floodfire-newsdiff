@@ -34,7 +34,7 @@ CREATE TABLE `article` (
   `list_id` int(10) UNSIGNED NOT NULL COMMENT '列表編號',
   `url` varchar(1024) NOT NULL COMMENT '新聞網址',
   `url_md5` varchar(32) NOT NULL COMMENT '網址MD5雜湊值',
-  `source` tinyint(3) UNSIGNED NOT NULL COMMENT '媒體編號',
+  `source_id` tinyint(3) UNSIGNED NOT NULL COMMENT '媒體編號',
   `created_at` datetime DEFAULT NULL COMMENT '建立時間',
   `article_time` datetime NOT NULL COMMENT '文章時間',
   `status_code` varchar(3) NOT NULL COMMENT '狀態碼',
@@ -55,7 +55,9 @@ CREATE TABLE `list` (
   `id` int(11) NOT NULL,
   `url` varchar(1024) NOT NULL COMMENT '新聞網址',
   `url_md5` varchar(32) NOT NULL COMMENT '網址MD5雜湊值',
-  `source` tinyint(3) UNSIGNED NOT NULL COMMENT '媒體編號',
+  `source_id` tinyint(3) UNSIGNED NOT NULL COMMENT '媒體編號',
+  `category` text COMMENT '新聞類別',
+  `title` text NOT NULL COMMENT '新聞標題',
   `created_at` datetime NOT NULL COMMENT '連結建立時間',
   `crawler_count` tinyint(3) UNSIGNED NOT NULL DEFAULT 0 COMMENT '爬抓次數',
   `error_count` tinyint(4) NOT NULL DEFAULT 0 COMMENT '發生錯誤次數'
@@ -121,8 +123,8 @@ INSERT INTO `source_define` (`id`, `media_name`, `note`) VALUES
 --
 ALTER TABLE `article`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_source` (`source`),
-  ADD KEY `idx_source_created_at` (`source`,`created_at`),
+  ADD KEY `idx_source_id` (`source_id`),
+  ADD KEY `idx_source_created_at` (`source_id`,`created_at`),
   ADD KEY `idx_created_at` (`created_at`),
   ADD KEY `idx_last_fatch_at` (`last_fetch_at`),
   ADD KEY `url_md5` (`url_md5`),
@@ -133,8 +135,8 @@ ALTER TABLE `article`
 --
 ALTER TABLE `list`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_source` (`source`),
-  ADD KEY `idx_source_created_at` (`source`,`created_at`),
+  ADD KEY `idx_source_id` (`source_id`),
+  ADD KEY `idx_source_created_at` (`source_id`,`created_at`),
   ADD KEY `idx_created_at` (`created_at`),
   ADD KEY `idx_last_fatch_at` (`crawler_count`),
   ADD KEY `url_md5` (`url_md5`);

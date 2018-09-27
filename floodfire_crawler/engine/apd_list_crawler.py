@@ -27,6 +27,10 @@ class ApdListCrawler(BaseListCrawler):
             html = req.text
         return html
 
+    def get_last(self):
+        return null
+	
+	
     def fetch_list(self, soup):
         news = []
         news_rows = soup.find_all("li", {"class": "rtddt"})
@@ -47,7 +51,8 @@ class ApdListCrawler(BaseListCrawler):
     def make_a_round(self):
         consecutive = 0
         start_page = 1
-        for page in range(start_page, end_page+1):
+        page = 1
+        while(1):
             if consecutive > 20:
                 print('News consecutive more than 20, stop crawler!!')
                 break
@@ -56,6 +61,11 @@ class ApdListCrawler(BaseListCrawler):
             sleep(2)
             html = self.fetch_html(page_url)
             soup = BeautifulSoup(html, 'html.parser')
+            
+            if(soup.contents[0]!='html'):
+                break
+            
+            
             news_list = self.fetch_list(soup)
             #print(news_list)
             for news in news_list:
@@ -65,6 +75,7 @@ class ApdListCrawler(BaseListCrawler):
                 else:
                     print(news['title']+' exist! skip insert.')
                     consecutive += 1
+            page += 1
 
 
     def run(self):
