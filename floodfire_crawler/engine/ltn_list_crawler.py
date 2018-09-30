@@ -84,16 +84,4 @@ class LtnListCrawler(BaseListCrawler):
         soup = BeautifulSoup(html, 'html.parser')
         last_page = self.get_last(soup)
         self.make_a_round(1, last_page)
-        """
-        news_list = self.fetch_list(soup)
-        print(news_list)
-        for news in news_list:
-            if(self.floodfire_storage.check_list(news['url_md5']) == 0):
-                self.floodfire_storage.insert_list(news)
-            else:
-                print(news['title']+' exist! skip insert.')
-            
-        last_page = self.get_last(soup)
-        print(last_page)
-        """
         
