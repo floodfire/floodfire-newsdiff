@@ -25,8 +25,8 @@ class Crawler():
         
     def main(self):
         parser = ArgumentParser(description="水火新聞爬蟲")
-        parser.add_argument("-m","--media", help="指定爬抓的媒體")
-        parser.add_argument("-t","--typeof", choices=['list', 'page'], 
+        parser.add_argument("media", help="指定爬抓的媒體")
+        parser.add_argument("typeof", choices=['list', 'page'], 
                             default='list', help="爬抓的類別：列表、頁面")
         parser.add_argument("-w", "--raw", action="store_true",
                             help="儲存網頁原始內容")
