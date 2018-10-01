@@ -3,6 +3,7 @@
 import os
 from argparse import ArgumentParser
 from floodfire_crawler.engine.ltn_list_crawler import LtnListCrawler
+from floodfire_crawler.engine.apd_list_crawler import ApdListCrawler
 from configparser import ConfigParser
 
 class Crawler():
@@ -15,7 +16,13 @@ class Crawler():
         llc = LtnListCrawler(self.config)
         llc.url = 'http://news.ltn.com.tw/list/breakingnews'
         llc.run()
-
+    
+    def __apd(self, args):
+        plc = ApdListCrawler(self.config)
+        plc.url = 'https://tw.appledaily.com/new'
+        plc.run()
+        
+        
     def main(self):
         parser = ArgumentParser(description="水火新聞爬蟲")
         parser.add_argument("media", help="指定爬抓的媒體")
@@ -29,6 +36,9 @@ class Crawler():
 
         if args.media == 'ltn':
             self.__ltn(args)
+            
+        if args.media == 'apd':
+            self.__apd(args)
 
 if __name__ == '__main__':
     c = Crawler()
