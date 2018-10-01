@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 4.7.5
+-- version 4.8.3
 -- https://www.phpmyadmin.net/
 --
 -- 主機: localhost
--- 產生時間： 2018 年 09 月 09 日 19:32
--- 伺服器版本: 10.2.14-MariaDB-10.2.14+maria~xenial-log
--- PHP 版本： 7.2.7-0ubuntu0.18.04.2
+-- 產生時間： 2018 年 10 月 02 日 01:50
+-- 伺服器版本: 10.2.17-MariaDB-10.2.17+maria~xenial
+-- PHP 版本： 7.2.10-0ubuntu0.18.04.1
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET AUTOCOMMIT = 0;
@@ -19,30 +19,8 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- 資料庫： `ffnewsdiff`
+-- 資料庫： `newsdiff_tuvix`
 --
-
--- --------------------------------------------------------
-
---
--- 資料表結構 `article`
---
-
-DROP TABLE IF EXISTS `article`;
-CREATE TABLE `article` (
-  `id` int(11) UNSIGNED NOT NULL,
-  `list_id` int(10) UNSIGNED NOT NULL COMMENT '列表編號',
-  `url` varchar(1024) NOT NULL COMMENT '新聞網址',
-  `url_md5` varchar(32) NOT NULL COMMENT '網址MD5雜湊值',
-  `source_id` tinyint(3) UNSIGNED NOT NULL COMMENT '媒體編號',
-  `created_at` datetime DEFAULT NULL COMMENT '建立時間',
-  `article_time` datetime NOT NULL COMMENT '文章時間',
-  `status_code` varchar(3) NOT NULL COMMENT '狀態碼',
-  `title` text NOT NULL COMMENT '新聞標題',
-  `body` text NOT NULL COMMENT '新聞內容',
-  `last_fetch_at` datetime DEFAULT NULL,
-  `last_changed_at` datetime DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -50,13 +28,12 @@ CREATE TABLE `article` (
 -- 資料表結構 `list`
 --
 
-DROP TABLE IF EXISTS `list`;
 CREATE TABLE `list` (
   `id` int(11) NOT NULL,
   `url` varchar(1024) NOT NULL COMMENT '新聞網址',
   `url_md5` varchar(32) NOT NULL COMMENT '網址MD5雜湊值',
   `source_id` tinyint(3) UNSIGNED NOT NULL COMMENT '媒體編號',
-  `category` text COMMENT '新聞類別',
+  `category` varchar(50) NOT NULL COMMENT '新聞類別',
   `title` text NOT NULL COMMENT '新聞標題',
   `created_at` datetime NOT NULL COMMENT '連結建立時間',
   `crawler_count` tinyint(3) UNSIGNED NOT NULL DEFAULT 0 COMMENT '爬抓次數',
@@ -66,79 +43,96 @@ CREATE TABLE `list` (
 -- --------------------------------------------------------
 
 --
--- 資料表結構 `page_raw`
+-- 資料表結構 `page`
 --
 
-DROP TABLE IF EXISTS `page_raw`;
-CREATE TABLE `page_raw` (
-  `id` int(10) UNSIGNED NOT NULL,
-  `link_id` int(10) UNSIGNED NOT NULL COMMENT '列表編號',
+CREATE TABLE `page` (
+  `id` int(11) UNSIGNED NOT NULL,
+  `list_id` int(10) UNSIGNED NOT NULL COMMENT '列表編號',
   `url` varchar(1024) NOT NULL COMMENT '新聞網址',
   `url_md5` varchar(32) NOT NULL COMMENT '網址MD5雜湊值',
-  `page_content` text NOT NULL COMMENT '原始內容'
+  `redirected_url` varchar(1024) NOT NULL COMMENT '重新導向後的網址',
+  `source_id` tinyint(3) UNSIGNED NOT NULL COMMENT '媒體編號',
+  `publish_time` datetime NOT NULL COMMENT '發佈時間',
+  `title` text NOT NULL COMMENT '新聞標題',
+  `body` text NOT NULL COMMENT '新聞內容',
+  `image` tinyint(1) NOT NULL DEFAULT 0 COMMENT '有無圖片',
+  `video` tinyint(1) NOT NULL DEFAULT 0 COMMENT '有無影片',
+  `created_at` datetime DEFAULT NULL COMMENT '建立時間'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
 --
--- 資料表結構 `source_define`
+-- 資料表結構 `page_raw`
 --
 
-DROP TABLE IF EXISTS `source_define`;
-CREATE TABLE `source_define` (
+CREATE TABLE `page_raw` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `link_id` int(10) UNSIGNED NOT NULL COMMENT '列表編號',
+  `url` varchar(1024) NOT NULL COMMENT '新聞網址',
+  `url_md5` varchar(32) NOT NULL COMMENT '網址MD5雜湊值',
+  `page_content` text NOT NULL COMMENT '原始內容',
+  `created_at` datetime NOT NULL COMMENT '建立時間'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- 資料表結構 `source`
+--
+
+CREATE TABLE `source` (
   `id` tinyint(3) UNSIGNED NOT NULL COMMENT '編號',
+  `code_name` varchar(20) NOT NULL COMMENT '英文代稱',
   `media_name` varchar(50) NOT NULL COMMENT '媒體名稱',
   `note` text NOT NULL COMMENT '備註'
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- 資料表的匯出資料 `source_define`
+-- 資料表的匯出資料 `source`
 --
 
-INSERT INTO `source_define` (`id`, `media_name`, `note`) VALUES
-(1, '蘋果日報', ''),
-(2, '中時電子報', ''),
-(3, '中央社', ''),
-(4, '東森新聞', ''),
-(5, '自由時報', ''),
-(6, '新頭穀', ''),
-(7, 'nownews', ''),
-(8, '聯合新聞網', ''),
-(9, 'TVBS', ''),
-(10, '中廣新聞網', ''),
-(11, '公視新聞網', ''),
-(12, '台視新聞', ''),
-(13, '華視新聞', ''),
-(14, '民視新聞', ''),
-(15, '三立新聞', ''),
-(16, '風傳媒', ''),
-(17, '關鍵評論網', '');
+INSERT INTO `source` (`id`, `code_name`, `media_name`, `note`) VALUES
+(1, 'apd', '蘋果日報', ''),
+(2, '', '中時電子報', ''),
+(3, '', '中央社', ''),
+(4, '', '東森新聞', ''),
+(5, 'ltn', '自由時報', ''),
+(6, '', '新頭穀', ''),
+(7, '', 'nownews', ''),
+(8, '', '聯合新聞網', ''),
+(9, '', 'TVBS', ''),
+(10, '', '中廣新聞網', ''),
+(11, '', '公視新聞網', ''),
+(12, '', '台視新聞', ''),
+(13, '', '華視新聞', ''),
+(14, '', '民視新聞', ''),
+(15, '', '三立新聞', ''),
+(16, '', '風傳媒', ''),
+(17, '', '關鍵評論網', '');
 
 --
 -- 已匯出資料表的索引
 --
 
 --
--- 資料表索引 `article`
---
-ALTER TABLE `article`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_source_id` (`source_id`),
-  ADD KEY `idx_source_created_at` (`source_id`,`created_at`),
-  ADD KEY `idx_created_at` (`created_at`),
-  ADD KEY `idx_last_fatch_at` (`last_fetch_at`),
-  ADD KEY `url_md5` (`url_md5`),
-  ADD KEY `url_md5_2` (`url_md5`);
-
---
 -- 資料表索引 `list`
 --
 ALTER TABLE `list`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_source_id` (`source_id`),
-  ADD KEY `idx_source_created_at` (`source_id`,`created_at`),
+  ADD KEY `idx_source` (`source_id`),
+  ADD KEY `url_md5` (`url_md5`),
+  ADD KEY `crawler_count` (`crawler_count`),
+  ADD KEY `error_count` (`error_count`);
+
+--
+-- 資料表索引 `page`
+--
+ALTER TABLE `page`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_source` (`source_id`),
   ADD KEY `idx_created_at` (`created_at`),
-  ADD KEY `idx_last_fatch_at` (`crawler_count`),
   ADD KEY `url_md5` (`url_md5`);
 
 --
@@ -148,20 +142,26 @@ ALTER TABLE `page_raw`
   ADD PRIMARY KEY (`id`);
 
 --
--- 在匯出的資料表使用 AUTO_INCREMENT
+-- 資料表索引 `source`
 --
+ALTER TABLE `source`
+  ADD PRIMARY KEY (`id`);
 
 --
--- 使用資料表 AUTO_INCREMENT `article`
+-- 在匯出的資料表使用 AUTO_INCREMENT
 --
-ALTER TABLE `article`
-  MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- 使用資料表 AUTO_INCREMENT `list`
 --
 ALTER TABLE `list`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- 使用資料表 AUTO_INCREMENT `page`
+--
+ALTER TABLE `page`
+  MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- 使用資料表 AUTO_INCREMENT `page_raw`
