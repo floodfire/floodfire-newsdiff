@@ -12,7 +12,7 @@ class FloodfireStorage():
                                         passwd=config['RDB']['DB_PASSWORD'],
                                         db=config['RDB']['DB_DATABASE'],
                                         charset='utf8')
-            self.cur = self.conn.cursor()
+            self.cur = self.conn.cursor(cursorclass=MySQLdb.cursors.DictCursor)
         except MySQLdb.OperationalError:
             print('Database connection fail!')
 
@@ -60,7 +60,13 @@ class FloodfireStorage():
         Keyword arguments:
             url_hash (string) -- list 代表的 hansh 值
         """
-        pass
+        sql = "UPDATE `list` SET `crawler_count` = `crawler_count` + 1 WHERE `url_md5`=%s"
+        try:
+            self.cur.execute(sql, (url_hash,))
+            self.conn.commit()               
+
+        except MySQLdb.OperationalError as e:
+            print('Error! Get crawl list error!' + e.args[1])
     
     def get_source_list(self):
         """
@@ -78,8 +84,35 @@ class FloodfireStorage():
         Keyword arguments:
             code_name (string) -- 媒體簡寫英文名稱
         """
-        pass
+        sql = "SELECT `id` FROM `source` WHERE `code_name`=%s"
+        try:
+            self.cur.execute(sql, (code_name,))
+            rs = self.cur.fetchone()
+            source_id = rs['id']
 
+        except MySQLdb.OperationalError:
+            print('Error! Get source id error!')
+        return source_id
+
+    def get_crawllist(self, source_id):
+        """
+        取得待爬的資料內容
+
+        Keyword arguments:
+            source_id (int) -- 媒體編號
+        """
+        rs = {}
+        sql = "SELECT `id`, `url`, `url_md5` FROM `list` \
+               WHERE `source_id`=%s AND `crawler_count`=0 Limit 0,10"
+        try:
+            self.cur.execute(sql, (source_id,))
+            if self.cur.rowcount > 0:
+                rs = self.cur.fetchall()                
+
+        except MySQLdb.OperationalError as e:
+            print('Error! Get crawl list error!' + e.args[1])
+        return rs
+    
     def insert_page(self, page_row):
         """
         新增 news page 資料
@@ -87,7 +120,27 @@ class FloodfireStorage():
         Keyword arguments:
             page (dictionary) -- 新聞 page 的新聞內容
         """
-        pass
+        sql = "INSERT INTO `page`(`list_id`, `url`, `url_md5`, `redirected_url`, `source_id`, `publish_time`, `title`, `body`, `image`, `video`, `created_at`) \
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        params = (
+            page_row['list_id'],
+            page_row['url'],
+            page_row['url_md5'],
+            page_row['redirected_url'],
+            page_row['source_id'],
+            page_row['publish_time'],
+            page_row['title'],
+            page_row['body'],
+            page_row['image'],
+            page_row['video'],
+            time.strftime('%Y-%m-%d %H:%M:%S')
+        )
+
+        try:
+            self.cur.execute(sql, params)
+            self.conn.commit()
+        except MySQLdb.OperationalError:
+            print('Error! Insert new list error!')
 
     def insert_page_raw(self, html_raw):
         """
