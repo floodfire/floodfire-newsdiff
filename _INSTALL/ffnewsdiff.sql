@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- 主機: localhost
--- 產生時間： 2018 年 10 月 02 日 01:50
+-- 產生時間： 2018 年 10 月 02 日 20:28
 -- 伺服器版本: 10.2.17-MariaDB-10.2.17+maria~xenial
 -- PHP 版本： 7.2.10-0ubuntu0.18.04.1
 
@@ -56,8 +56,10 @@ CREATE TABLE `page` (
   `publish_time` datetime NOT NULL COMMENT '發佈時間',
   `title` text NOT NULL COMMENT '新聞標題',
   `body` text NOT NULL COMMENT '新聞內容',
+  `authors` varchar(255) DEFAULT NULL COMMENT '作者（記者）',
   `image` tinyint(1) NOT NULL DEFAULT 0 COMMENT '有無圖片',
   `video` tinyint(1) NOT NULL DEFAULT 0 COMMENT '有無影片',
+  `keywords` varchar(255) DEFAULT NULL COMMENT '新聞關鍵字',
   `created_at` datetime DEFAULT NULL COMMENT '建立時間'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
