@@ -170,6 +170,19 @@ class LtnPageCrawler(BasePageCrawler):
         time_string = soup.find('meta', property='article:published_time')
         page['publish_time'] = strftime('%Y-%m-%d %H:%M:%S', strptime(time_string['content'][:-7], '%Y-%m-%dT%H:%M:%S'))
         return page
+
+    def __health_category(self, soup):
+        """
+        取出 health 類別需要的資料內容
+        """
+        page = dict()
+        article = soup.find('div', class_='whitecon articlebody')
+        page['title'] = article.h1.text.strip()
+        article_content = soup.find('div', itemprop='articleBody')
+        p_tags = article_content.find_all('p',recursive=False)
+        page['body'] = "\n".join([p.text for p in p_tags])
+        page['publish_time'] = article_content.find_all('span')[0].text + ':00'
+        return page
     
     def fetch_news_content(self, category, soup):
         """
@@ -200,6 +213,8 @@ class LtnPageCrawler(BasePageCrawler):
             news_page = self.__auto_category(soup)
         elif category == 'playing':
             news_page = self.__playing_category(soup)
+        elif category == 'health':
+            news_page = self.__health_category(soup)
         return news_page
     
     def extract_type(self, url):
@@ -212,6 +227,12 @@ class LtnPageCrawler(BasePageCrawler):
         hostname = urlparse(url).hostname
         page_type = hostname.split('.')[0]
         return page_type
+
+    def fetch_publish_time(self):
+        """
+        發佈時間併入各個類別中爬梳
+        """
+        pass
     
     
     def run(self):
@@ -248,7 +269,7 @@ class LtnPageCrawler(BasePageCrawler):
                 self.floodfire_storage.update_list_errorcount(row['url_md5'])
 
         # 單頁測試
-        # status_code, html_content = self.fetch_html('http://playing.ltn.com.tw/article/10785')
+        # status_code, html_content = self.fetch_html('http://health.ltn.com.tw/article/life/breakingnews/2573488')
         # if status_code == requests.codes.ok:
         #     page_type = self.extract_type(html_content['redirected_url'])
         #     soup = BeautifulSoup(html_content['html'], 'html.parser')
