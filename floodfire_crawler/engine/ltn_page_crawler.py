@@ -41,12 +41,21 @@ class LtnPageCrawler(BasePageCrawler):
         取出 news 類別需要的資料內容
         """
         page = dict()
-        article_title = soup.find('div', class_='whitecon articlebody')
-        page['title'] = article_title.h1.text.strip()
+        article = soup.find('div', class_='whitecon articlebody')
+        page['title'] = article.h1.text.strip()
         article_content = soup.find('div', itemprop='articleBody')
         p_tags = article_content.find_all('p',recursive=False)
         page['body'] = "\n".join([p.text for p in p_tags])
-        page['publish_time'] = article_content.find('span', class_='viewtime').text
+        page['publish_time'] = article_content.find('span', class_='viewtime').text + ':00'
+        
+        # 英文新聞中沒有關鍵字區塊
+        if article.find('div', class_='keyword boxTitle'):
+            page['keywords'] = list()
+            keywords = article.find('div', class_='keyword boxTitle').find_all('a')
+            for keyword in keywords:
+                page['keywords'].append(keyword.text.strip())
+        else:
+            page['keywords'] = None
         return page
 
     def __ent_category(self, soup):
@@ -61,6 +70,9 @@ class LtnPageCrawler(BasePageCrawler):
         time_string = soup.find('meta', attrs={'name':'pubdate'})
         page['publish_time'] = strftime('%Y-%m-%d %H:%M:%S', strptime(time_string['content'][:-6], '%Y-%m-%dT%H:%M:%S'))
 
+        # -- 娛樂新聞沒有關鍵字
+        page['keywords'] = None
+
         return page
 
     def __ec_category(self, soup):
@@ -74,6 +86,13 @@ class LtnPageCrawler(BasePageCrawler):
         p_tags = article_content.find_all('p',recursive=False)
         page['body'] = "\n".join([p.text for p in p_tags])
         page['publish_time'] = article.find('span', class_='time').text + ':00'
+
+        # --- 取出關鍵字 ---
+        page['keywords'] = list()
+        keywords = article.find('div', class_='keyword boxTitle').find_all('a')
+        for keyword in keywords:
+            page['keywords'].append(keyword.text.strip())
+
         return page
 
     def __sports_category(self, soup):
@@ -86,7 +105,13 @@ class LtnPageCrawler(BasePageCrawler):
         article_content = article.find('div', itemprop='articleBody')
         p_tags = article_content.find_all('p',recursive=False)
         page['body'] = "\n".join([p.text for p in p_tags])
-        page['publish_time'] = article.find('div', class_='c_time').text
+        page['publish_time'] = article.find('div', class_='c_time').text + ':00'
+
+        # --- 取出關鍵字 ---
+        page['keywords'] = list()
+        keywords = article.find('div', class_='keyword boxTitle').find_all('a')
+        for keyword in keywords:
+            page['keywords'].append(keyword.text.strip())
         
         return page
 
@@ -100,7 +125,18 @@ class LtnPageCrawler(BasePageCrawler):
         article_content = article.find('div', itemprop='articleBody')
         p_tags = article_content.find_all('p',recursive=False)
         page['body'] = "\n".join([p.text for p in p_tags])
-        page['publish_time'] = article.find('div', class_='writer_date').text + ':00'
+        
+        # 有無作者資訊會影響出現的時間區段
+        if article.find('div', class_='mobile_none'):
+            page['publish_time'] = article.find('div', class_='mobile_none').text + ':00'
+        elif article.find('div', class_='writer_date'):
+            page['publish_time'] = article.find('div', class_='writer_date').text + ':00'
+
+        # --- 取出關鍵字 ---
+        page['keywords'] = list()
+        keywords = article.find('div', class_='kwtab boxTitle').find_all('a')
+        for keyword in keywords:
+            page['keywords'].append(keyword.text.strip())
         return page
 
     def __istyle_category(self, soup):
@@ -116,6 +152,13 @@ class LtnPageCrawler(BasePageCrawler):
         
         time_string = article_title.find('div', class_='label-date').text
         page['publish_time'] = strftime('%Y-%m-%d %H:%M:%S', strptime(time_string, '%b. %d %Y %H:%M:%S'))
+        
+        # --- 取出關鍵字 ---
+        page['keywords'] = list()
+        keywords = soup.find('article').find('section', class_='tag boxTitle').find_all('a')
+        for keyword in keywords:
+            page['keywords'].append(keyword.text.strip())
+        
         return page
 
     def __3c_category(self, soup):
@@ -129,6 +172,12 @@ class LtnPageCrawler(BasePageCrawler):
         p_tags = article_content.find_all('p',recursive=False)
         page['body'] = "\n".join([p.text for p in p_tags])
         page['publish_time'] =  article.find('div', class_='writer').select('span')[1].text + ':00'
+        
+        # --- 取出關鍵字 ---
+        page['keywords'] = list()
+        keywords = article.find('div', class_='contab boxTitle boxText').find_all('a')
+        for keyword in keywords:
+            page['keywords'].append(keyword.text.strip())
         return page
 
     def __market_category(self, soup):
@@ -155,6 +204,12 @@ class LtnPageCrawler(BasePageCrawler):
         p_tags = article_content.find_all('p',recursive=False)
         page['body'] = "\n".join([p.text for p in p_tags])
         page['publish_time'] = article_content.find('span', class_='h1dt').text + ':00'
+
+        # --- 取出關鍵字 ---
+        page['keywords'] = list()
+        keywords = soup.find('div', class_='kw2 boxTitle').find_all('a')
+        for keyword in keywords:
+            page['keywords'].append(keyword.text.strip())
         return page
 
     def __playing_category(self, soup):
@@ -169,6 +224,12 @@ class LtnPageCrawler(BasePageCrawler):
         page['body'] = "\n".join([p.text.strip() for p in p_tags])
         time_string = soup.find('meta', property='article:published_time')
         page['publish_time'] = strftime('%Y-%m-%d %H:%M:%S', strptime(time_string['content'][:-7], '%Y-%m-%dT%H:%M:%S'))
+        
+        # --- 取出關鍵字 ---
+        page['keywords'] = list()
+        keywords = soup.find('div', class_='keyword boxTitle').find_all('a')
+        for keyword in keywords:
+            page['keywords'].append(keyword.text.strip())
         return page
 
     def __health_category(self, soup):
@@ -182,6 +243,12 @@ class LtnPageCrawler(BasePageCrawler):
         p_tags = article_content.find_all('p',recursive=False)
         page['body'] = "\n".join([p.text for p in p_tags])
         page['publish_time'] = article_content.find_all('span')[0].text + ':00'
+
+        # --- 取出關鍵字 ---
+        page['keywords'] = list()
+        keywords = article.find('div', class_='keyword boxTitle').find_all('a')
+        for keyword in keywords:
+            page['keywords'].append(keyword.text.strip())
         return page
     
     def fetch_news_content(self, category, soup):
@@ -235,6 +302,7 @@ class LtnPageCrawler(BasePageCrawler):
         pass
     
     
+    
     def run(self):
         """
         程式進入點
@@ -242,36 +310,36 @@ class LtnPageCrawler(BasePageCrawler):
         source_id = self.floodfire_storage.get_source_id(self.code_name)
         crawl_list = self.floodfire_storage.get_crawllist(source_id)
         
-        for row in crawl_list:
-            status_code, html_content = self.fetch_html(row['url'])
-            if status_code == requests.codes.ok:
-                page_type = self.extract_type(html_content['redirected_url'])
+        # for row in crawl_list:
+        #     status_code, html_content = self.fetch_html(row['url'])
+        #     if status_code == requests.codes.ok:
+        #         page_type = self.extract_type(html_content['redirected_url'])
 
-                soup = BeautifulSoup(html_content['html'], 'html.parser')
-                news_page = self.fetch_news_content(page_type, soup)
-                # print(news_page)
-                news_page['list_id'] = row['id']
-                news_page['url'] = row['url']
-                news_page['url_md5'] = row['url_md5']
-                news_page['redirected_url'] = html_content['redirected_url']
-                news_page['source_id'] = source_id
-                news_page['image'] = 0
-                news_page['video'] = 0
+        #         soup = BeautifulSoup(html_content['html'], 'html.parser')
+        #         news_page = self.fetch_news_content(page_type, soup)
+        #         # print(news_page)
+        #         news_page['list_id'] = row['id']
+        #         news_page['url'] = row['url']
+        #         news_page['url_md5'] = row['url_md5']
+        #         news_page['redirected_url'] = html_content['redirected_url']
+        #         news_page['source_id'] = source_id
+        #         news_page['image'] = 0
+        #         news_page['video'] = 0
 
-                self.floodfire_storage.insert_page(news_page)
-                # 更新爬抓次數記錄
-                self.floodfire_storage.update_list_crawlercount(row['url_md5'])
-                # 隨機睡 2~6 秒再進入下一筆抓取
-                print('crawling...[{}] id: {}'.format(page_type, row['id']))
-                sleep(randint(2, 6))
-            else:
-                # get 網頁失敗的時候更新 error count
-                self.floodfire_storage.update_list_errorcount(row['url_md5'])
+        #         self.floodfire_storage.insert_page(news_page)
+        #         # 更新爬抓次數記錄
+        #         self.floodfire_storage.update_list_crawlercount(row['url_md5'])
+        #         # 隨機睡 2~6 秒再進入下一筆抓取
+        #         print('crawling...[{}] id: {}'.format(page_type, row['id']))
+        #         sleep(randint(2, 6))
+        #     else:
+        #         # get 網頁失敗的時候更新 error count
+        #         self.floodfire_storage.update_list_errorcount(row['url_md5'])
 
         # 單頁測試
-        # status_code, html_content = self.fetch_html('http://health.ltn.com.tw/article/life/breakingnews/2573488')
-        # if status_code == requests.codes.ok:
-        #     page_type = self.extract_type(html_content['redirected_url'])
-        #     soup = BeautifulSoup(html_content['html'], 'html.parser')
-        #     news_page = self.fetch_news_content(page_type, soup)
-        #     print(news_page)
+        status_code, html_content = self.fetch_html('http://health.ltn.com.tw/article/life/breakingnews/2573558')
+        if status_code == requests.codes.ok:
+            page_type = self.extract_type(html_content['redirected_url'])
+            soup = BeautifulSoup(html_content['html'], 'html.parser')
+            news_page = self.fetch_news_content(page_type, soup)
+            print(news_page)
