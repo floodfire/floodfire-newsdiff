@@ -21,11 +21,22 @@ class LtnListCrawler(BaseListCrawler):
         self.floodfire_storage = FloodfireStorage(config)
 
     def fetch_html(self, url):
-        req = requests.get(url)
 
-        if req.status_code == requests.codes.ok:
-            html = req.text
-        return html
+        try:
+            headers = {
+                'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36',
+            }
+
+            response = requests.get(url, headers=headers, timeout=15)
+            resp_content = response.text
+        except requests.exceptions.HTTPError as err:
+            msg = "HTTP exception error: {}".format(err)
+            return 0, msg
+        except requests.exceptions.RequestException as e:
+            msg = "Exception error {}".format(e)
+            return 0, msg
+    
+        return response.status_code, resp_content
 
     def fetch_list(self, soup):
         news = []
@@ -66,22 +77,25 @@ class LtnListCrawler(BaseListCrawler):
             page_url = self.url + '/all/' + str(page)
             print(page_url)
             sleep(2)
-            html = self.fetch_html(page_url)
-            soup = BeautifulSoup(html, 'html.parser')
-            news_list = self.fetch_list(soup)
-            #print(news_list)
-            for news in news_list:
-                if(self.floodfire_storage.check_list(news['url_md5']) == 0):
-                    self.floodfire_storage.insert_list(news)
-                    consecutive = 0
-                else:
-                    print(news['title']+' exist! skip insert.')
-                    consecutive += 1
+            status_code, html_content = self.fetch_html(page_url)
+
+            if status_code == requests.codes.ok:
+                soup = BeautifulSoup(html_content, 'html.parser')
+                news_list = self.fetch_list(soup)
+                #print(news_list)
+                for news in news_list:
+                    if(self.floodfire_storage.check_list(news['url_md5']) == 0):
+                        self.floodfire_storage.insert_list(news)
+                        consecutive = 0
+                    else:
+                        print(news['title']+' exist! skip insert.')
+                        consecutive += 1
 
 
     def run(self):
-        html = self.fetch_html(self.url)
-        soup = BeautifulSoup(html, 'html.parser')
-        last_page = self.get_last(soup)
-        self.make_a_round(1, last_page)
+        status_code, html_content = self.fetch_html(self.url)
+        if status_code == requests.codes.ok:
+            soup = BeautifulSoup(html_content, 'html.parser')
+            last_page = self.get_last(soup)
+            self.make_a_round(1, last_page)
         

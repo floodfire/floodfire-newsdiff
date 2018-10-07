@@ -13,7 +13,7 @@ class LtnPageCrawler(BasePageCrawler):
 
     def __init__(self, config):
         self.code_name = "ltn"
-        self.regex_pattern = re.compile(r'［|〔記者(\w*)／\w*〕|］')
+        self.regex_pattern = re.compile(r"[［〔]記者(\w*)／\w*[〕］]")
         self.floodfire_storage = FloodfireStorage(config)
 
     def fetch_html(self, url):
@@ -24,7 +24,10 @@ class LtnPageCrawler(BasePageCrawler):
             url (string) -- 抓取的網頁網址
         """
         try:
-            response = requests.get(url, timeout=15)
+            headers = {
+                'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36',
+            }
+            response = requests.get(url, headers=headers, timeout=15)
             resp_content = {
                 'redirected_url': response.url, # 取得最後 redirect 之後的真實網址
                 'html': response.text
@@ -51,16 +54,14 @@ class LtnPageCrawler(BasePageCrawler):
         page['publish_time'] = article_content.find('span', class_='viewtime').text + ':00'
         
         # 英文新聞中沒有關鍵字區塊
+        page['keywords'] = list()
         if article.find('div', class_='keyword boxTitle'):
-            page['keywords'] = list()
             keywords = article.find('div', class_='keyword boxTitle').find_all('a')
             for keyword in keywords:
                 page['keywords'].append(keyword.text.strip())
-        else:
-            page['keywords'] = None
 
         # -- 取出記者 ---
-        page['author'] = self.extract_author(page['body'])
+        page['authors'] = self.extract_author(page['body'])
         return page
 
     def __ent_category(self, soup):
@@ -76,10 +77,10 @@ class LtnPageCrawler(BasePageCrawler):
         page['publish_time'] = strftime('%Y-%m-%d %H:%M:%S', strptime(time_string['content'][:-6], '%Y-%m-%dT%H:%M:%S'))
 
         # -- 娛樂新聞沒有關鍵字
-        page['keywords'] = None
+        page['keywords'] = list()
 
         # -- 取出記者 ---
-        page['author'] = self.extract_author(page['body'])
+        page['authors'] = self.extract_author(page['body'])
 
         return page
 
@@ -102,7 +103,7 @@ class LtnPageCrawler(BasePageCrawler):
             page['keywords'].append(keyword.text.strip())
 
         # -- 取出記者 ---
-        page['author'] = self.extract_author(page['body'])
+        page['authors'] = self.extract_author(page['body'])
         return page
 
     def __sports_category(self, soup):
@@ -124,7 +125,7 @@ class LtnPageCrawler(BasePageCrawler):
             page['keywords'].append(keyword.text.strip())
         
         # -- 取出記者 ---
-        page['author'] = self.extract_author(page['body'])
+        page['authors'] = self.extract_author(page['body'])
         return page
 
     def __talk_category(self, soup):
@@ -152,9 +153,9 @@ class LtnPageCrawler(BasePageCrawler):
 
         # -- 取出文章作者 ---
         if article.find('div', class_='writer boxTitle'):
-            page['author'] = article.find('div', class_='writer boxTitle').find('a')['data-desc']
+            page['authors'] = article.find('div', class_='writer boxTitle').find('a')['data-desc']
         else:
-            page['author'] = list()
+            page['authors'] = list()
         return page
 
     def __istyle_category(self, soup):
@@ -179,7 +180,7 @@ class LtnPageCrawler(BasePageCrawler):
         
         # -- 取出記者 ---
         author = article_title.find('p', class_='auther').find('span').text.strip()
-        page['author'] = re.findall(r'文／記者(\w*)', author)
+        page['authors'] = re.findall(r'文／記者(\w*)', author)
         return page
 
     def __3c_category(self, soup):
@@ -202,7 +203,7 @@ class LtnPageCrawler(BasePageCrawler):
 
         # -- 取出記者 ---
         author = article.find('div', class_='writer').find('span').text.strip()
-        page['author'] = re.findall(r'文／記者(\w*)', author)
+        page['authors'] = re.findall(r'文／記者(\w*)', author)
         return page
 
     def __market_category(self, soup):
@@ -238,7 +239,7 @@ class LtnPageCrawler(BasePageCrawler):
 
         # -- 取出記者 ---
         author = article_content.find('span', class_='writer').text.strip()
-        page['author'] = re.findall(r'文／記者(\w*)', author)
+        page['authors'] = re.findall(r'文／記者(\w*)', author)
         return page
 
     def __playing_category(self, soup):
@@ -262,7 +263,7 @@ class LtnPageCrawler(BasePageCrawler):
 
         # -- 取出記者 ---
         author = article_title.find('span').text.strip()
-        page['author'] = re.findall(r'文／記者(\w*)', author)
+        page['authors'] = re.findall(r'文／記者(\w*)', author)
         return page
 
     def __health_category(self, soup):
@@ -284,7 +285,7 @@ class LtnPageCrawler(BasePageCrawler):
             page['keywords'].append(keyword.text.strip())
         
         # -- 取出記者 ---
-        page['author'] = self.extract_author(page['body'])
+        page['authors'] = self.extract_author(page['body'])
         return page
     
     def fetch_news_content(self, category, soup):
