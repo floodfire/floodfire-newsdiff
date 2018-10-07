@@ -135,8 +135,8 @@ class FloodfireStorage():
         Keyword arguments:
             page (dictionary) -- 新聞 page 的新聞內容
         """
-        sql = "INSERT INTO `page`(`list_id`, `url`, `url_md5`, `redirected_url`, `source_id`, `publish_time`, `title`, `body`, `image`, `video`, `created_at`) \
-               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        sql = "INSERT INTO `page`(`list_id`, `url`, `url_md5`, `redirected_url`, `source_id`, `publish_time`, `title`, `body`, `authors`, `image`, `video`, `keywords`, `created_at`) \
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
         params = (
             page_row['list_id'],
             page_row['url'],
@@ -146,8 +146,10 @@ class FloodfireStorage():
             page_row['publish_time'],
             page_row['title'],
             page_row['body'],
+            ','.join(page_row['authors']),
             page_row['image'],
             page_row['video'],
+            ','.join(page_row['keywords']),
             time.strftime('%Y-%m-%d %H:%M:%S')
         )
 

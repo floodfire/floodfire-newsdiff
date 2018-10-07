@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import requests
+import re
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 from time import sleep, strftime, strptime
@@ -12,6 +13,7 @@ class LtnPageCrawler(BasePageCrawler):
 
     def __init__(self, config):
         self.code_name = "ltn"
+        self.regex_pattern = re.compile(r"[［〔]記者(\w*)／\w*[〕］]")
         self.floodfire_storage = FloodfireStorage(config)
 
     def fetch_html(self, url):
@@ -22,7 +24,10 @@ class LtnPageCrawler(BasePageCrawler):
             url (string) -- 抓取的網頁網址
         """
         try:
-            response = requests.get(url, timeout=15)
+            headers = {
+                'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36',
+            }
+            response = requests.get(url, headers=headers, timeout=15)
             resp_content = {
                 'redirected_url': response.url, # 取得最後 redirect 之後的真實網址
                 'html': response.text
@@ -36,6 +41,253 @@ class LtnPageCrawler(BasePageCrawler):
 
         return response.status_code, resp_content
 
+    def __news_category(self, soup):
+        """
+        取出 news 類別需要的資料內容
+        """
+        page = dict()
+        article = soup.find('div', class_='whitecon articlebody')
+        page['title'] = article.h1.text.strip()
+        article_content = soup.find('div', itemprop='articleBody')
+        p_tags = article_content.find_all('p',recursive=False)
+        page['body'] = "\n".join([p.text for p in p_tags])
+        page['publish_time'] = article_content.find('span', class_='viewtime').text + ':00'
+        
+        # 英文新聞中沒有關鍵字區塊
+        page['keywords'] = list()
+        if article.find('div', class_='keyword boxTitle'):
+            keywords = article.find('div', class_='keyword boxTitle').find_all('a')
+            for keyword in keywords:
+                page['keywords'].append(keyword.text.strip())
+
+        # -- 取出記者 ---
+        page['authors'] = self.extract_author(page['body'])
+        return page
+
+    def __ent_category(self, soup):
+        """
+        取出 ent 類別需要的資料內容
+        """
+        page = dict()
+        article = soup.find('div', itemprop='articleBody')
+        page['title'] = article.h1.text.strip()
+        p_tags = article.find_all('p',recursive=False)
+        page['body'] = "\n".join([p.text for p in p_tags])
+        time_string = soup.find('meta', attrs={'name':'pubdate'})
+        page['publish_time'] = strftime('%Y-%m-%d %H:%M:%S', strptime(time_string['content'][:-6], '%Y-%m-%dT%H:%M:%S'))
+
+        # -- 娛樂新聞沒有關鍵字
+        page['keywords'] = list()
+
+        # -- 取出記者 ---
+        page['authors'] = self.extract_author(page['body'])
+
+        return page
+
+    def __ec_category(self, soup):
+        """
+        取出 ec 類別需要的資料內容
+        """
+        page = dict()
+        article = soup.find('div', class_='whitecon boxTitle')
+        page['title'] = article.h1.text.strip()
+        article_content = article.find('div', class_='text')
+        p_tags = article_content.find_all('p',recursive=False)
+        page['body'] = "\n".join([p.text for p in p_tags])
+        page['publish_time'] = article.find('span', class_='time').text + ':00'
+
+        # --- 取出關鍵字 ---
+        page['keywords'] = list()
+        keywords = article.find('div', class_='keyword boxTitle').find_all('a')
+        for keyword in keywords:
+            page['keywords'].append(keyword.text.strip())
+
+        # -- 取出記者 ---
+        page['authors'] = self.extract_author(page['body'])
+        return page
+
+    def __sports_category(self, soup):
+        """
+        取出 sports 類別需要的資料內容
+        """
+        page = dict()
+        article = soup.find('div', class_='news_content')
+        page['title'] = article.h1.text.strip()
+        article_content = article.find('div', itemprop='articleBody')
+        p_tags = article_content.find_all('p',recursive=False)
+        page['body'] = "\n".join([p.text for p in p_tags])
+        page['publish_time'] = article.find('div', class_='c_time').text + ':00'
+
+        # --- 取出關鍵字 ---
+        page['keywords'] = list()
+        keywords = article.find('div', class_='keyword boxTitle').find_all('a')
+        for keyword in keywords:
+            page['keywords'].append(keyword.text.strip())
+        
+        # -- 取出記者 ---
+        page['authors'] = self.extract_author(page['body'])
+        return page
+
+    def __talk_category(self, soup):
+        """
+        取出 talk 類別需要的資料內容
+        """
+        page = dict()
+        article = soup.find('div', class_='conbox')
+        page['title'] = article.h1.text.strip()
+        article_content = article.find('div', itemprop='articleBody')
+        p_tags = article_content.find_all('p',recursive=False)
+        page['body'] = "\n".join([p.text for p in p_tags])
+        
+        # 有無作者資訊會影響出現的時間區段
+        if article.find('div', class_='mobile_none'):
+            page['publish_time'] = article.find('div', class_='mobile_none').text + ':00'
+        elif article.find('div', class_='writer_date'):
+            page['publish_time'] = article.find('div', class_='writer_date').text + ':00'
+
+        # --- 取出關鍵字 ---
+        page['keywords'] = list()
+        keywords = article.find('div', class_='kwtab boxTitle').find_all('a')
+        for keyword in keywords:
+            page['keywords'].append(keyword.text.strip())
+
+        # -- 取出文章作者 ---
+        if article.find('div', class_='writer boxTitle'):
+            page['authors'] = article.find('div', class_='writer boxTitle').find('a')['data-desc']
+        else:
+            page['authors'] = list()
+        return page
+
+    def __istyle_category(self, soup):
+        """
+        取出 istyle 類別需要的資料內容
+        """
+        page = dict()
+        article_title = soup.find('div', class_='caption')
+        page['title'] = article_title.h2.text.strip()
+        article_content = soup.find('article').find('div', itemprop='articleBody')
+        p_tags = article_content.find_all('p',recursive=False)
+        page['body'] = "\n".join([p.text for p in p_tags])
+        
+        time_string = article_title.find('div', class_='label-date').text
+        page['publish_time'] = strftime('%Y-%m-%d %H:%M:%S', strptime(time_string, '%b. %d %Y %H:%M:%S'))
+        
+        # --- 取出關鍵字 ---
+        page['keywords'] = list()
+        keywords = soup.find('article').find('section', class_='tag boxTitle').find_all('a')
+        for keyword in keywords:
+            page['keywords'].append(keyword.text.strip())
+        
+        # -- 取出記者 ---
+        author = article_title.find('p', class_='auther').find('span').text.strip()
+        page['authors'] = re.findall(r'文／記者(\w*)', author)
+        return page
+
+    def __3c_category(self, soup):
+        """
+        取出 3c 類別需要的資料內容
+        """
+        page = dict()
+        article = soup.find('div', class_='conbox')
+        page['title'] = article.h1.text.strip()
+        article_content = article.find('div', itemprop='articleBody')
+        p_tags = article_content.find_all('p',recursive=False)
+        page['body'] = "\n".join([p.text for p in p_tags])
+        page['publish_time'] =  article.find('div', class_='writer').select('span')[1].text + ':00'
+        
+        # --- 取出關鍵字 ---
+        page['keywords'] = list()
+        keywords = article.find('div', class_='contab boxTitle boxText').find_all('a')
+        for keyword in keywords:
+            page['keywords'].append(keyword.text.strip())
+
+        # -- 取出記者 ---
+        author = article.find('div', class_='writer').find('span').text.strip()
+        page['authors'] = re.findall(r'文／記者(\w*)', author)
+        return page
+
+    def __market_category(self, soup):
+        """
+        取出 market 類別需要的資料內容
+        """
+        page = dict()
+        article = soup.find('div', class_='whitecon articlebody boxTitle')
+        page['title'] = article.h1.find('div', class_='boxText').text.strip()
+        article_content = article.find('div', class_='text')
+        p_tags = article_content.find_all('p',recursive=False)
+        page['body'] = "\n".join([p.text for p in p_tags])
+        page['publish_time'] = article_content.find('span', class_='date1').text
+        return page
+
+    def __auto_category(self, soup):
+        """
+        取出 auto 類別需要的資料內容
+        """
+        page = dict()
+        article_title = soup.find('h1', class_='h1tt')
+        page['title'] = article_title.text.strip()
+        article_content = soup.find('div', itemprop='articleBody')
+        p_tags = article_content.find_all('p',recursive=False)
+        page['body'] = "\n".join([p.text for p in p_tags])
+        page['publish_time'] = article_content.find('span', class_='h1dt').text + ':00'
+
+        # --- 取出關鍵字 ---
+        page['keywords'] = list()
+        keywords = soup.find('div', class_='kw2 boxTitle').find_all('a')
+        for keyword in keywords:
+            page['keywords'].append(keyword.text.strip())
+
+        # -- 取出記者 ---
+        author = article_content.find('span', class_='writer').text.strip()
+        page['authors'] = re.findall(r'文／記者(\w*)', author)
+        return page
+
+    def __playing_category(self, soup):
+        """
+        取出 playing 類別需要的資料內容
+        """
+        page = dict()
+        article_title = soup.find('div', class_='article_header')
+        page['title'] = article_title.h1.text.strip()
+        article_content = soup.find('div', itemprop='articleBody').find('div', class_='text')
+        p_tags = article_content.find_all('p',recursive=False)
+        page['body'] = "\n".join([p.text.strip() for p in p_tags])
+        time_string = soup.find('meta', property='article:published_time')
+        page['publish_time'] = strftime('%Y-%m-%d %H:%M:%S', strptime(time_string['content'][:-7], '%Y-%m-%dT%H:%M:%S'))
+        
+        # --- 取出關鍵字 ---
+        page['keywords'] = list()
+        keywords = soup.find('div', class_='keyword boxTitle').find_all('a')
+        for keyword in keywords:
+            page['keywords'].append(keyword.text.strip())
+
+        # -- 取出記者 ---
+        author = article_title.find('span').text.strip()
+        page['authors'] = re.findall(r'文／記者(\w*)', author)
+        return page
+
+    def __health_category(self, soup):
+        """
+        取出 health 類別需要的資料內容
+        """
+        page = dict()
+        article = soup.find('div', class_='whitecon articlebody')
+        page['title'] = article.h1.text.strip()
+        article_content = soup.find('div', itemprop='articleBody')
+        p_tags = article_content.find_all('p',recursive=False)
+        page['body'] = "\n".join([p.text for p in p_tags])
+        page['publish_time'] = article_content.find_all('span')[0].text + ':00'
+
+        # --- 取出關鍵字 ---
+        page['keywords'] = list()
+        keywords = article.find('div', class_='keyword boxTitle').find_all('a')
+        for keyword in keywords:
+            page['keywords'].append(keyword.text.strip())
+        
+        # -- 取出記者 ---
+        page['authors'] = self.extract_author(page['body'])
+        return page
+    
     def fetch_news_content(self, category, soup):
         """
         取出網頁中的新聞內容
@@ -44,110 +296,30 @@ class LtnPageCrawler(BasePageCrawler):
             category (string) -- 類別
             soup (beautifulsoup) -- 已經 parse 過的 BeautifulSoup 物件
         """
-        news_page = {}
+        news_page = dict()
         if category == 'news':
-            article_title = soup.find('div', class_='whitecon articlebody')
-            news_page['title'] = article_title.h1.text.strip()
-            article_content = soup.find('div', itemprop='articleBody')
-            p_tags = article_content.find_all('p',recursive=False)
-            news_page['body'] = "\n".join([p.text for p in p_tags])
-            news_page['publish_time'] = self.fetch_publish_time(category, article_content)
+            news_page = self.__news_category(soup)
         elif category == 'ent':
-            article = soup.find('div', itemprop='articleBody')
-            news_page['title'] = article.h1.text.strip()
-            p_tags = article.find_all('p',recursive=False)
-            news_page['body'] = "\n".join([p.text for p in p_tags])
-            news_page['publish_time'] = self.fetch_publish_time(category, article)
+            news_page = self.__ent_category(soup)
         elif category == 'ec':
-            article = soup.find('div', class_='whitecon boxTitle')
-            news_page['title'] = article.h1.text.strip()
-            article_content = article.find('div', class_='text')
-            p_tags = article_content.find_all('p',recursive=False)
-            news_page['body'] = "\n".join([p.text for p in p_tags])
-            news_page['publish_time'] = self.fetch_publish_time(category, article)
+            news_page = self.__ec_category(soup)
         elif category == 'sports':
-            article = soup.find('div', class_='news_content')
-            news_page['title'] = article.h1.text.strip()
-            article_content = article.find('div', itemprop='articleBody')
-            p_tags = article_content.find_all('p',recursive=False)
-            news_page['body'] = "\n".join([p.text for p in p_tags])
-            news_page['publish_time'] = self.fetch_publish_time(category, article)
+            news_page = self.__sports_category(soup)
         elif category == 'talk':
-            article = soup.find('div', class_='conbox')
-            news_page['title'] = article.h1.text.strip()
-            article_content = article.find('div', itemprop='articleBody')
-            p_tags = article_content.find_all('p',recursive=False)
-            news_page['body'] = "\n".join([p.text for p in p_tags])
-            news_page['publish_time'] = self.fetch_publish_time(category, article)
+            news_page = self.__talk_category(soup)
         elif category == 'istyle':
-            article_title = soup.find('div', class_='caption')
-            news_page['title'] = article_title.h2.text.strip()
-            article_content = soup.find('article').find('div', itemprop='articleBody')
-            p_tags = article_content.find_all('p',recursive=False)
-            news_page['body'] = "\n".join([p.text for p in p_tags])
-            news_page['publish_time'] = self.fetch_publish_time(category, article_title)
+            news_page = self.__istyle_category(soup)
         elif category == '3c':
-            article = soup.find('div', class_='conbox')
-            news_page['title'] = article.h1.text.strip()
-            article_content = article.find('div', itemprop='articleBody')
-            p_tags = article_content.find_all('p',recursive=False)
-            news_page['body'] = "\n".join([p.text for p in p_tags])
-            news_page['publish_time'] = self.fetch_publish_time(category, article)
+            news_page = self.__3c_category(soup)
         elif category == 'market':
-            article = soup.find('div', class_='whitecon articlebody boxTitle')
-            news_page['title'] = article.h1.find('div', class_='boxText').text.strip()
-            article_content = article.find('div', class_='text')
-            p_tags = article_content.find_all('p',recursive=False)
-            news_page['body'] = "\n".join([p.text for p in p_tags])
-            news_page['publish_time'] = self.fetch_publish_time(category, article_content)
+            news_page = self.__market_category(soup)
         elif category == 'auto':
-            article_title = soup.find('h1', class_='h1tt')
-            news_page['title'] = article_title.text.strip()
-            article_content = soup.find('div', itemprop='articleBody')
-            p_tags = article_content.find_all('p',recursive=False)
-            news_page['body'] = "\n".join([p.text for p in p_tags])
-            news_page['publish_time'] = self.fetch_publish_time(category, article_content)
+            news_page = self.__auto_category(soup)
         elif category == 'playing':
-            article_title = soup.find('div', class_='article_header')
-            news_page['title'] = article_title.h1.text.strip()
-            article_content = soup.find('div', itemprop='articleBody').find('div', class_='text')
-            p_tags = article_content.find_all('p',recursive=False)
-            news_page['body'] = "\n".join([p.text.strip() for p in p_tags])
-            news_page['publish_time'] = self.fetch_publish_time(category, soup)
+            news_page = self.__playing_category(soup)
+        elif category == 'health':
+            news_page = self.__health_category(soup)
         return news_page
-
-    def fetch_publish_time(self, category, soup):
-        """
-        取出網頁中的發佈時間
-
-        Keyword arguments:
-            category (string) -- 類別
-            soup (beautifulsoup) -- 已經 parse 過的 BeautifulSoup 物件
-        """
-        publish_time = ''
-        if category == 'news':
-            publish_time = soup.find('span', class_='viewtime').text
-        elif category == 'ent':
-            publish_time = soup.find('div', class_='date').text
-        elif category == 'ec':
-            publish_time = soup.find('span', class_='time').text
-        elif category == 'sports':
-            publish_time = soup.find('div', class_='c_time').text
-        elif category == 'talk':
-            publish_time = soup.find('div', class_='mobile_none').text
-        elif category == 'istyle':
-            time_string = soup.find('div', class_='label-date').text
-            publish_time = strftime('%Y-%m-%d %H:%M:%S', strptime(time_string, '%b. %d %Y %H:%M:%S'))
-        elif category == '3c':
-            publish_time = soup.find('div', class_='writer').select('span')[1].text
-        elif category == 'market':
-            publish_time = soup.find('span', class_='date1').text
-        elif category == 'auto':
-            publish_time = soup.find('span', class_='h1dt').text
-        elif category == 'playing':
-            time_string = soup.find('meta', property='article:published_time')
-            publish_time = strftime('%Y-%m-%d %H:%M:%S', strptime(time_string['content'][:-7], '%Y-%m-%dT%H:%M:%S'))
-        return publish_time
     
     def extract_type(self, url):
         """
@@ -159,7 +331,16 @@ class LtnPageCrawler(BasePageCrawler):
         hostname = urlparse(url).hostname
         page_type = hostname.split('.')[0]
         return page_type
+
+    def fetch_publish_time(self):
+        """
+        發佈時間併入各個類別中爬梳
+        """
+        pass
     
+    def extract_author(self, content):
+        author = self.regex_pattern.findall(content)
+        return author
     
     def run(self):
         """
@@ -188,14 +369,14 @@ class LtnPageCrawler(BasePageCrawler):
                 # 更新爬抓次數記錄
                 self.floodfire_storage.update_list_crawlercount(row['url_md5'])
                 # 隨機睡 2~6 秒再進入下一筆抓取
-                print('crawling...id: {}'.format(row['id']))
+                print('crawling...[{}] id: {}'.format(page_type, row['id']))
                 sleep(randint(2, 6))
             else:
                 # get 網頁失敗的時候更新 error count
                 self.floodfire_storage.update_list_errorcount(row['url_md5'])
 
         # 單頁測試
-        # status_code, html_content = self.fetch_html('http://playing.ltn.com.tw/article/10754')
+        # status_code, html_content = self.fetch_html('http://istyle.ltn.com.tw/article/8758')
         # if status_code == requests.codes.ok:
         #     page_type = self.extract_type(html_content['redirected_url'])
         #     soup = BeautifulSoup(html_content['html'], 'html.parser')
