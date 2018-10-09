@@ -58,9 +58,7 @@ class ApdPageCrawler(BasePageCrawler):
         page['body'] = news_content
 
         # --- 取出發布時間 ---
-        time = soup.select('.ndArticle_creat')[0].text.strip()
-        news_time = strftime('%Y-%m-%d %H:%M:%S', strptime(time[time.find('：')+1:], '%Y/%m/%d %H:%M'))
-        page['publish_time'] = news_time
+        page['publish_time'] = self.fetch_publish_time(soup)
         
         # --- 取出關鍵字 ---
         #keywords
@@ -94,12 +92,12 @@ class ApdPageCrawler(BasePageCrawler):
         re.findall('https?://(?:[-\w./])+.(?:jpg|gif|png)', video_box.select('script')[-1].text)[0]
 
         """
-        return page    
-    def fetch_publish_time(self):
-        """
-        發佈時間併入各個類別中爬梳
-        """
-        pass
+        return page   
+    
+    def fetch_publish_time(self,soup):
+        time = soup.select('.ndArticle_creat')[0].text.strip()
+        news_time = strftime('%Y-%m-%d %H:%M:%S', strptime(time[time.find('：')+1:], '%Y/%m/%d %H:%M'))
+        return(news_time)
     
     def run(self):
         """
