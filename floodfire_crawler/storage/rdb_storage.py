@@ -125,7 +125,7 @@ class FloodfireStorage():
         """
         rs = {}
         sql = "SELECT `id`, `url`, `url_md5` FROM `list` \
-               WHERE `source_id`=%s AND `crawler_count`=0 Limit 0,50"
+               WHERE `source_id`=%s AND `crawler_count`= 0 AND `error_count` < 5 Limit 0,50"
         try:
             self.cur.execute(sql, (source_id,))
             if self.cur.rowcount > 0:
