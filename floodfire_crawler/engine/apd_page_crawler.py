@@ -153,8 +153,8 @@ class ApdPageCrawler(BasePageCrawler):
                     # get 網頁失敗的時候更新 error count
                     self.floodfire_storage.update_list_errorcount(row['url_md5'])
             except Exception as e:
-                self.errlog.exception('error: ' + str(row['id']) + str(e))
+                self.errlog.exception('error: list-' + str(row['id']) + ' ' + str(e))
                 # 更新錯誤次數記錄
                 self.floodfire_storage.update_list_errorcount(row['url_md5'])
-                continue
+                pass
             self.runlog.info('Crawled ' + str(crawl_count) + ' ' + self.code_name + '-news lists.')
