@@ -405,7 +405,7 @@ class LtnPageCrawler(BasePageCrawler):
                 # 更新錯誤次數記錄
                 self.floodfire_storage.update_list_errorcount(row['url_md5'])
                 continue
-        self.runlog.info('Crawled ' + str(len(crawl_count)) + ' ' + self.code_name + '-news lists.')
+        self.runlog.info('Crawled ' + str(crawl_count) + ' ' + self.code_name + '-news lists.')
         # 單頁測試
         # status_code, html_content = self.fetch_html('http://istyle.ltn.com.tw/article/8758')
         # if status_code == requests.codes.ok:
