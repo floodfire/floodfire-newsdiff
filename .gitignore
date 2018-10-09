@@ -109,3 +109,6 @@ venv.bak/
 
 # ini config file
 *.ini
+
+# log file
+log/*.log

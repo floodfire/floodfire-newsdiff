@@ -33,6 +33,8 @@ class FloodfireStorage():
             self.conn.commit()
         except MySQLdb.OperationalError:
             print('Error! Insert new list error!')
+            return False
+        return True
 
     def check_list(self, url_hash):
         """
@@ -163,6 +165,9 @@ class FloodfireStorage():
             self.conn.commit()
         except MySQLdb.OperationalError:
             print('Error! Insert new list error!')
+            return False
+
+        return True
 
     def insert_page_raw(self, html_raw):
         """
