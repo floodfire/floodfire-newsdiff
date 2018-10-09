@@ -18,14 +18,14 @@ class LtnPageCrawler(BasePageCrawler):
         self.regex_pattern = re.compile(r"[［〔]記者(\w*)／\w*[〕］]")
         self.floodfire_storage = FloodfireStorage(config)
 
-        file_handler_err = handlers.RotatingFileHandler('log/crawler-err.log',maxBytes=1024,backupCount=5)
+        file_handler_err = handlers.RotatingFileHandler('log/crawler-err.log',maxBytes=1048576,backupCount=5)
         file_formatter = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s', '%Y-%m-%d %H:%M:%S')
         file_handler_err.setFormatter(file_formatter)
         self.errlog = logging.getLogger(self.code_name + '-err')
         self.errlog.setLevel(logging.WARNING)
         self.errlog.addHandler(file_handler_err)
 
-        file_handler_run = handlers.RotatingFileHandler('log/crawler-run.log',maxBytes=1024,backupCount=5)
+        file_handler_run = handlers.RotatingFileHandler('log/crawler-run.log',maxBytes=1048576,backupCount=5)
         file_handler_run.setFormatter(file_formatter)
         self.runlog = logging.getLogger(self.code_name + '-run')
         self.runlog.setLevel(logging.INFO)
