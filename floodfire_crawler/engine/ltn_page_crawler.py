@@ -98,9 +98,10 @@ class LtnPageCrawler(BasePageCrawler):
 
         # --- 取出關鍵字 ---
         page['keywords'] = list()
-        keywords = article.find('div', class_='keyword boxTitle').find_all('a')
-        for keyword in keywords:
-            page['keywords'].append(keyword.text.strip())
+        if article.find('div', class_='keyword boxTitle')：
+            keywords = article.find('div', class_='keyword boxTitle').find_all('a')
+            for keyword in keywords:
+                page['keywords'].append(keyword.text.strip())
 
         # -- 取出記者 ---
         page['authors'] = self.extract_author(page['body'])
@@ -365,9 +366,12 @@ class LtnPageCrawler(BasePageCrawler):
                 news_page['image'] = 0
                 news_page['video'] = 0
 
-                self.floodfire_storage.insert_page(news_page)
-                # 更新爬抓次數記錄
-                self.floodfire_storage.update_list_crawlercount(row['url_md5'])
+                if self.floodfire_storage.insert_page(news_page):
+                    # 更新爬抓次數記錄
+                    self.floodfire_storage.update_list_crawlercount(row['url_md5'])
+                else:
+                    # 更新錯誤次數記錄
+                    self.floodfire_storage.update_list_errorcount(row['url_md5'])
                 # 隨機睡 2~6 秒再進入下一筆抓取
                 print('crawling...[{}] id: {}'.format(page_type, row['id']))
                 sleep(randint(2, 6))

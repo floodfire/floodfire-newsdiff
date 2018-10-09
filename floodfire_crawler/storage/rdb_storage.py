@@ -63,10 +63,13 @@ class FloodfireStorage():
         sql = "UPDATE `list` SET `crawler_count` = `crawler_count` + 1 WHERE `url_md5`=%s"
         try:
             self.cur.execute(sql, (url_hash,))
-            self.conn.commit()               
+            self.conn.commit()
 
         except MySQLdb.OperationalError as e:
             print('Error! Update list crawler_count error!' + e.args[1])
+            return False
+
+        return True
 
     def update_list_errorcount(self, url_hash):
         """
@@ -82,6 +85,8 @@ class FloodfireStorage():
 
         except MySQLdb.OperationalError as e:
             print('Error! Update list error_count error!' + e.args[1])
+            return False
+        return True
     
     def get_source_list(self):
         """
