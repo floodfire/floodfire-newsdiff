@@ -2,8 +2,6 @@
 
 import requests
 import re
-import logging
-from logging import handlers
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 from time import sleep, strftime, strptime
@@ -13,24 +11,11 @@ from floodfire_crawler.storage.rdb_storage import FloodfireStorage
 
 class LtnPageCrawler(BasePageCrawler):
 
-    def __init__(self, config):
+    def __init__(self, config, logme):
         self.code_name = "ltn"
         self.regex_pattern = re.compile(r"[［〔]記者(\w*)／\w*[〕］]")
         self.floodfire_storage = FloodfireStorage(config)
-
-        file_handler_err = handlers.RotatingFileHandler('log/crawler-err.log',maxBytes=1048576,backupCount=5)
-        file_formatter = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s', '%Y-%m-%d %H:%M:%S')
-        file_handler_err.setFormatter(file_formatter)
-        self.errlog = logging.getLogger(self.code_name + '-err')
-        self.errlog.setLevel(logging.WARNING)
-        self.errlog.addHandler(file_handler_err)
-
-        file_handler_run = handlers.RotatingFileHandler('log/crawler-run.log',maxBytes=1048576,backupCount=5)
-        file_handler_run.setFormatter(file_formatter)
-        self.runlog = logging.getLogger(self.code_name + '-run')
-        self.runlog.setLevel(logging.INFO)
-        self.runlog.addHandler(file_handler_run)
-
+        self.logme = logme
 
 
     def fetch_html(self, url):
@@ -50,10 +35,12 @@ class LtnPageCrawler(BasePageCrawler):
                 'html': response.text
             }
         except requests.exceptions.HTTPError as err:
-            msg = "HTTP exception error: {}".format(err)
+            msg = "HTTP exception error: {}".format(err.args[1])
+            self.logme.error(msg)
             return 0, msg
         except requests.exceptions.RequestException as e:
-            msg = "Exception error {}".format(e)
+            msg = "Exception error {}".format(e.args[1])
+            self.logme.error(msg)
             return 0, msg
 
         return response.status_code, resp_content
@@ -366,7 +353,7 @@ class LtnPageCrawler(BasePageCrawler):
         """
         source_id = self.floodfire_storage.get_source_id(self.code_name)
         crawl_list = self.floodfire_storage.get_crawllist(source_id)
-        self.runlog.info('Start crawling ' + str(len(crawl_list)) + ' ' + self.code_name + '-news lists.')
+        self.logme.info('Start crawling ' + str(len(crawl_list)) + ' ' + self.code_name + '-news lists.')
         # 本次的爬抓計數
         crawl_count = 0
 
@@ -401,11 +388,11 @@ class LtnPageCrawler(BasePageCrawler):
                     # get 網頁失敗的時候更新 error count
                     self.floodfire_storage.update_list_errorcount(row['url_md5'])
             except Exception as e:
-                self.errlog.exception('error: list-' + str(row['id']) + str(e))
+                self.logme.exception('error: list-' + str(row['id']) + str(e.args[1]))
                 # 更新錯誤次數記錄
                 self.floodfire_storage.update_list_errorcount(row['url_md5'])
                 pass
-        self.runlog.info('Crawled ' + str(crawl_count) + ' ' + self.code_name + '-news lists.')
+        self.logme.info('Crawled ' + str(crawl_count) + ' ' + self.code_name + '-news lists.')
         # 單頁測試
         # status_code, html_content = self.fetch_html('http://istyle.ltn.com.tw/article/8758')
         # if status_code == requests.codes.ok:
