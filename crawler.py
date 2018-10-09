@@ -5,6 +5,7 @@ from argparse import ArgumentParser
 from floodfire_crawler.engine.ltn_list_crawler import LtnListCrawler
 from floodfire_crawler.engine.apd_list_crawler import ApdListCrawler
 from floodfire_crawler.engine.ltn_page_crawler import LtnPageCrawler
+from floodfire_crawler.engine.apd_page_crawler import ApdPageCrawler
 from configparser import ConfigParser
 
 class Crawler():
@@ -23,9 +24,13 @@ class Crawler():
             lpc.run()
     
     def __apd(self, args):
-        plc = ApdListCrawler(self.config)
-        plc.url = 'https://tw.appledaily.com/new'
-        plc.run()
+        if args.typeof == 'list':
+            plc = ApdListCrawler(self.config)
+            plc.url = 'https://tw.appledaily.com/new'
+            plc.run()
+        elif args.typeof == 'page':
+            plc = ApdPageCrawler(self.config)
+            plc.run()
         
     def main(self):
         parser = ArgumentParser(description="水火新聞爬蟲")
