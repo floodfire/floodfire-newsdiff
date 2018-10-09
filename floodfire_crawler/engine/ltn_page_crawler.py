@@ -18,11 +18,6 @@ class LtnPageCrawler(BasePageCrawler):
         self.regex_pattern = re.compile(r"[［〔]記者(\w*)／\w*[〕］]")
         self.floodfire_storage = FloodfireStorage(config)
 
-        # logging.basicConfig(
-        #     filename= 'crawler-err.log',
-        #     level=logging.WARNING,
-        #     datefmt='%Y-%m-%d %H:%M:%S',
-        #     format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
         file_handler_err = handlers.RotatingFileHandler('log/crawler-err.log',maxBytes=1024,backupCount=5)
         file_formatter = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s', '%Y-%m-%d %H:%M:%S')
         file_handler_err.setFormatter(file_formatter)
@@ -371,17 +366,19 @@ class LtnPageCrawler(BasePageCrawler):
         """
         source_id = self.floodfire_storage.get_source_id(self.code_name)
         crawl_list = self.floodfire_storage.get_crawllist(source_id)
-        self.runlog.info('Crawling ' + str(len(crawl_list)) + ' ' + self.code_name + '-news lists.')
-        
+        self.runlog.info('Start crawling ' + str(len(crawl_list)) + ' ' + self.code_name + '-news lists.')
+        # 本次的爬抓計數
+        crawl_count = 0
+
         for row in crawl_list:
             try:
                 status_code, html_content = self.fetch_html(row['url'])
                 if status_code == requests.codes.ok:
                     page_type = self.extract_type(html_content['redirected_url'])
+                    print('crawling...[{}] id: {}'.format(page_type, row['id']))
 
                     soup = BeautifulSoup(html_content['html'], 'html.parser')
                     news_page = self.fetch_news_content(page_type, soup)
-                    # print(news_page)
                     news_page['list_id'] = row['id']
                     news_page['url'] = row['url']
                     news_page['url_md5'] = row['url_md5']
@@ -393,21 +390,22 @@ class LtnPageCrawler(BasePageCrawler):
                     if self.floodfire_storage.insert_page(news_page):
                         # 更新爬抓次數記錄
                         self.floodfire_storage.update_list_crawlercount(row['url_md5'])
+                        # 本次爬抓計數+1
+                        crawl_count += 1
                     else:
                         # 更新錯誤次數記錄
                         self.floodfire_storage.update_list_errorcount(row['url_md5'])
                     # 隨機睡 2~6 秒再進入下一筆抓取
-                    print('crawling...[{}] id: {}'.format(page_type, row['id']))
                     sleep(randint(2, 6))
                 else:
                     # get 網頁失敗的時候更新 error count
                     self.floodfire_storage.update_list_errorcount(row['url_md5'])
             except Exception as e:
-                self.errlog.exception('error: ' + str(row['url_md5']) + str(e))
+                self.errlog.exception('error: ' + str(row['id']) + str(e))
                 # 更新錯誤次數記錄
                 self.floodfire_storage.update_list_errorcount(row['url_md5'])
                 continue
-
+        self.runlog.info('Crawled ' + str(len(crawl_count)) + ' ' + self.code_name + '-news lists.')
         # 單頁測試
         # status_code, html_content = self.fetch_html('http://istyle.ltn.com.tw/article/8758')
         # if status_code == requests.codes.ok:
