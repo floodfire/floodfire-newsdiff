@@ -145,4 +145,4 @@ class ApdPageCrawler(BasePageCrawler):
                 # 更新錯誤次數記錄
                 self.floodfire_storage.update_list_errorcount(row['url_md5'])
                 pass
-            self.logme.info('Crawled ' + str(crawl_count) + ' ' + self.code_name + '-news lists.')
+        self.logme.info('Crawled ' + str(crawl_count) + ' ' + self.code_name + '-news lists.')
