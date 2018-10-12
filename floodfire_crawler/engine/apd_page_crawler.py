@@ -119,6 +119,9 @@ class ApdPageCrawler(BasePageCrawler):
                 print('crawling... id: {}'.format(row['id']))
                 if status_code == requests.codes.ok:
                     soup = BeautifulSoup(html_content['html'], 'html.parser')
+                    if(soup.contents[0]!='html'):
+                        self.floodfire_storage.update_list_errorcount(row['url_md5'])
+                        continue
                     news_page = self.fetch_news_content(soup)
                     news_page['list_id'] = row['id']
                     news_page['url'] = row['url']
@@ -137,7 +140,6 @@ class ApdPageCrawler(BasePageCrawler):
                     # 隨機睡 2~6 秒再進入下一筆抓取
                     sleep(randint(2, 6))
                 else:
-                    print("what??")
                     # get 網頁失敗的時候更新 error count
                     self.floodfire_storage.update_list_errorcount(row['url_md5'])
             except Exception as e:
