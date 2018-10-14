@@ -2,6 +2,7 @@
 
 import requests
 import re
+import htmlmin
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 from time import sleep, strftime, strptime
@@ -346,8 +347,19 @@ class LtnPageCrawler(BasePageCrawler):
     def extract_author(self, content):
         author = self.regex_pattern.findall(content)
         return author
+
+    def compress_html(self, page_html):
+        """
+        壓縮原始的 HTML
+
+        Keyword arguments:
+            page_html (string) -- 原始 html
+        """
+        # minhtml = re.sub('>\s*<', '><', page_html, 0, re.M)
+        minhtml = htmlmin.minify(page_html, remove_empty_space=True)
+        return minhtml
     
-    def run(self):
+    def run(self, page_raw=False, page_diff=False):
         """
         程式進入點
         """
@@ -364,6 +376,14 @@ class LtnPageCrawler(BasePageCrawler):
                     page_type = self.extract_type(html_content['redirected_url'])
                     print('crawling...[{}] id: {}'.format(page_type, row['id']))
 
+                    if page_raw:
+                        news_page_raw = dict()
+                        news_page_raw['list_id'] = row['id']
+                        news_page_raw['url'] = row['url']
+                        news_page_raw['url_md5'] = row['url_md5']
+                        news_page_raw['page_content'] =  self.compress_html(html_content['html'])
+                        self.floodfire_storage.insert_page_raw(news_page_raw)
+                    
                     soup = BeautifulSoup(html_content['html'], 'html.parser')
                     news_page = self.fetch_news_content(page_type, soup)
                     news_page['list_id'] = row['id']
@@ -393,10 +413,14 @@ class LtnPageCrawler(BasePageCrawler):
                 self.floodfire_storage.update_list_errorcount(row['url_md5'])
                 pass
         self.logme.info('Crawled ' + str(crawl_count) + ' ' + self.code_name + '-news lists.')
+        
         # 單頁測試
-        # status_code, html_content = self.fetch_html('http://istyle.ltn.com.tw/article/8758')
+        # status_code, html_content = self.fetch_html('http://news.ltn.com.tw/news/world/breakingnews/2580179')
         # if status_code == requests.codes.ok:
         #     page_type = self.extract_type(html_content['redirected_url'])
         #     soup = BeautifulSoup(html_content['html'], 'html.parser')
         #     news_page = self.fetch_news_content(page_type, soup)
         #     print(news_page)
+
+        #     minhtml = self.compress_html(html_content['html'])
+        #     print(minhtml)

@@ -176,8 +176,24 @@ class FloodfireStorage():
         Keyword arguments:
             html_raw (string) -- 新聞頁原始 HTML 資料內容
         """
-        pass
-    
+        sql = "INSERT INTO `page_raw`(`link_id`, `url`, `url_md5`, `page_content`, `created_at`) \
+               VALUES (%s, %s, %s, %s, %s)"
+        params = (
+            html_raw['list_id'],
+            html_raw['url'],
+            html_raw['url_md5'],
+            html_raw['page_content'],
+            time.strftime('%Y-%m-%d %H:%M:%S')
+        )
+
+        try:
+            self.cur.execute(sql, params)
+            self.conn.commit()
+        except MySQLdb.OperationalError:
+            print('Error! Insert new html_raw error!')
+            return False
+        return True
+
     def __del__(self):
         self.cur.close()
         self.conn.close()
