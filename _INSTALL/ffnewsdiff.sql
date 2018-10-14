@@ -3,8 +3,8 @@
 -- https://www.phpmyadmin.net/
 --
 -- 主機: localhost
--- 產生時間： 2018 年 10 月 02 日 20:28
--- 伺服器版本: 10.2.17-MariaDB-10.2.17+maria~xenial
+-- 產生時間： 2018 年 10 月 14 日 20:37
+-- 伺服器版本: 10.2.18-MariaDB-1:10.2.18+maria~bionic-log
 -- PHP 版本： 7.2.10-0ubuntu0.18.04.1
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -19,7 +19,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- 資料庫： `newsdiff_tuvix`
+-- 資料庫： `floodfire_newsdiff`
 --
 
 -- --------------------------------------------------------
@@ -74,7 +74,7 @@ CREATE TABLE `page_raw` (
   `link_id` int(10) UNSIGNED NOT NULL COMMENT '列表編號',
   `url` varchar(1024) NOT NULL COMMENT '新聞網址',
   `url_md5` varchar(32) NOT NULL COMMENT '網址MD5雜湊值',
-  `page_content` text NOT NULL COMMENT '原始內容',
+  `page_content` mediumtext NOT NULL COMMENT '原始內容',
   `created_at` datetime NOT NULL COMMENT '建立時間'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

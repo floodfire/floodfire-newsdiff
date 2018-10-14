@@ -2,6 +2,7 @@
 
 import requests
 import re
+import htmlmin
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 from time import sleep, strftime, strptime
@@ -102,22 +103,47 @@ class ApdPageCrawler(BasePageCrawler):
         news_time = strftime('%Y-%m-%d %H:%M:%S', strptime(time[time.find('：')+1:], '%Y/%m/%d %H:%M'))
         return(news_time)
     
-    def run(self):
+    def compress_html(self, page_html):
+        """
+        壓縮原始的 HTML
+
+        Keyword arguments:
+            page_html (string) -- 原始 html
+        """
+        # minhtml = re.sub('>\s*<', '><', page_html, 0, re.M)
+        minhtml = htmlmin.minify(page_html, remove_empty_space=True)
+        return minhtml
+    
+    def run(self, page_raw=False, page_diff=False):
         """
         程式進入點
         """
         # crawl_category = ['news', 'ent', 'ec', 'sports']
         source_id = self.floodfire_storage.get_source_id(self.code_name)
         crawl_list = self.floodfire_storage.get_crawllist(source_id)
-        self.logme.info('Start crawling ' + str(len(crawl_list)) + ' ' + self.code_name + '-news lists.')
+        # log 起始訊息
+        start_msg = 'Start crawling ' + str(len(crawl_list)) + ' ' + self.code_name + '-news lists.'
+        if page_raw:
+            start_msg += ' --with save RAW'
+        self.logme.info(start_msg)
         # 本次的爬抓計數
         crawl_count = 0
 
         for row in crawl_list:
             try:
                 status_code, html_content = self.fetch_html(row['url'])
-                print('crawling... id: {}'.format(row['id']))
                 if status_code == requests.codes.ok:
+                    print('crawling... id: {}'.format(row['id']))
+
+                    if page_raw:
+                        news_page_raw = dict()
+                        news_page_raw['list_id'] = row['id']
+                        news_page_raw['url'] = row['url']
+                        news_page_raw['url_md5'] = row['url_md5']
+                        news_page_raw['page_content'] =  self.compress_html(html_content['html'])
+                        self.floodfire_storage.insert_page_raw(news_page_raw)
+                        print('Save ' + str(row['id']) + ' page Raw.')
+
                     soup = BeautifulSoup(html_content['html'], 'html.parser')
                     if(soup.contents[0]!='html'):
                         self.floodfire_storage.update_list_errorcount(row['url_md5'])

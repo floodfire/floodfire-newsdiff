@@ -29,9 +29,10 @@ class Crawler():
             llc = LtnListCrawler(self.config)
             llc.url = 'http://news.ltn.com.tw/list/breakingnews'
             llc.run()
+
         elif self.args.typeof == 'page':
             lpc = LtnPageCrawler(self.config, self.logme)
-            lpc.run()
+            lpc.run(self.args.raw, self.args.diff)
     
     def __apd(self):
         if self.args.typeof == 'list':
@@ -40,7 +41,7 @@ class Crawler():
             plc.run()
         elif self.args.typeof == 'page':
             plc = ApdPageCrawler(self.config, self.logme)
-            plc.run()
+            plc.run(self.args.raw, self.args.diff)
         
     def main(self):
  
