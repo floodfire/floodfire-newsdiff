@@ -388,7 +388,7 @@ class LtnPageCrawler(BasePageCrawler):
                     # get 網頁失敗的時候更新 error count
                     self.floodfire_storage.update_list_errorcount(row['url_md5'])
             except Exception as e:
-                self.logme.exception('error: list-' + str(row['id']) + str(e.args[1]))
+                self.logme.exception('error: list-' + str(row['id']) + str(e.args))
                 # 更新錯誤次數記錄
                 self.floodfire_storage.update_list_errorcount(row['url_md5'])
                 pass
