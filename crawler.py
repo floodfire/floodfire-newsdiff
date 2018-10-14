@@ -41,7 +41,7 @@ class Crawler():
             plc.run()
         elif self.args.typeof == 'page':
             plc = ApdPageCrawler(self.config, self.logme)
-            plc.run()
+            plc.run(self.args.raw, self.args.diff)
         
     def main(self):
  

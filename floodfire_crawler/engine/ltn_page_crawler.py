@@ -365,7 +365,11 @@ class LtnPageCrawler(BasePageCrawler):
         """
         source_id = self.floodfire_storage.get_source_id(self.code_name)
         crawl_list = self.floodfire_storage.get_crawllist(source_id)
-        self.logme.info('Start crawling ' + str(len(crawl_list)) + ' ' + self.code_name + '-news lists.')
+        # log 起始訊息
+        start_msg = 'Start crawling ' + str(len(crawl_list)) + ' ' + self.code_name + '-news lists.'
+        if page_raw:
+            start_msg += ' --with save RAW'
+        self.logme.info(start_msg)
         # 本次的爬抓計數
         crawl_count = 0
 
@@ -383,6 +387,7 @@ class LtnPageCrawler(BasePageCrawler):
                         news_page_raw['url_md5'] = row['url_md5']
                         news_page_raw['page_content'] =  self.compress_html(html_content['html'])
                         self.floodfire_storage.insert_page_raw(news_page_raw)
+                        print('Save ' + str(row['id']) + ' page Raw.')
                     
                     soup = BeautifulSoup(html_content['html'], 'html.parser')
                     news_page = self.fetch_news_content(page_type, soup)
