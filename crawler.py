@@ -32,7 +32,7 @@ class Crawler():
 
         elif self.args.typeof == 'page':
             lpc = LtnPageCrawler(self.config, self.logme)
-            lpc.run(self.args.raw, self.args.diff)
+            lpc.run(self.args.raw, self.args.diff, self.args.visual)
     
     def __apd(self):
         if self.args.typeof == 'list':
@@ -60,6 +60,8 @@ if __name__ == '__main__':
                         help="儲存網頁原始內容")
     parser.add_argument("-d", "--diff", action="store_true",
                         help="儲存網頁 Diff 差異")
+    parser.add_argument("-v", "--visual", action="store_true",
+                        help="儲存網頁 media 連結內容")
     args = parser.parse_args()
     
     c = Crawler(args)

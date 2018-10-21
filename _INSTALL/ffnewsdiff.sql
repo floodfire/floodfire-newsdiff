@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- 主機: localhost
--- 產生時間： 2018 年 10 月 14 日 20:37
+-- 產生時間： 2018 年 10 月 21 日 20:30
 -- 伺服器版本: 10.2.18-MariaDB-1:10.2.18+maria~bionic-log
 -- PHP 版本： 7.2.10-0ubuntu0.18.04.1
 
@@ -114,6 +114,22 @@ INSERT INTO `source` (`id`, `code_name`, `media_name`, `note`) VALUES
 (16, '', '風傳媒', ''),
 (17, '', '關鍵評論網', '');
 
+-- --------------------------------------------------------
+
+--
+-- 資料表結構 `visual_link`
+--
+
+CREATE TABLE `visual_link` (
+  `id` int(10) UNSIGNED NOT NULL COMMENT '編號',
+  `type` tinyint(3) UNSIGNED NOT NULL COMMENT '列表編號（1: pic, 2: video）',
+  `list_id` int(10) UNSIGNED NOT NULL COMMENT '頁面編號',
+  `url_md5` varchar(32) NOT NULL COMMENT '網址MD5雜湊值',
+  `visual_src` varchar(1024) NOT NULL COMMENT '圖像連結位址',
+  `caption` varchar(255) DEFAULT NULL COMMENT '圖像標題內容',
+  `created_at` datetime NOT NULL COMMENT '建立時間'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='抽取圖片或是影片網址';
+
 --
 -- 已匯出資料表的索引
 --
@@ -150,6 +166,13 @@ ALTER TABLE `source`
   ADD PRIMARY KEY (`id`);
 
 --
+-- 資料表索引 `visual_link`
+--
+ALTER TABLE `visual_link`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `url_md5` (`url_md5`);
+
+--
 -- 在匯出的資料表使用 AUTO_INCREMENT
 --
 
@@ -170,6 +193,12 @@ ALTER TABLE `page`
 --
 ALTER TABLE `page_raw`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- 使用資料表 AUTO_INCREMENT `visual_link`
+--
+ALTER TABLE `visual_link`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '編號';
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

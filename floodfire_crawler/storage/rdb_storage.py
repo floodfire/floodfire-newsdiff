@@ -140,7 +140,7 @@ class FloodfireStorage():
         新增 news page 資料
 
         Keyword arguments:
-            page (dictionary) -- 新聞 page 的新聞內容
+            page_row (dictionary) -- 新聞 page 的新聞內容
         """
         sql = "INSERT INTO `page`(`list_id`, `url`, `url_md5`, `redirected_url`, `source_id`, `publish_time`, `title`, `body`, `authors`, `image`, `video`, `keywords`, `created_at`) \
                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
@@ -183,6 +183,32 @@ class FloodfireStorage():
             html_raw['url'],
             html_raw['url_md5'],
             html_raw['page_content'],
+            time.strftime('%Y-%m-%d %H:%M:%S')
+        )
+
+        try:
+            self.cur.execute(sql, params)
+            self.conn.commit()
+        except MySQLdb.OperationalError:
+            print('Error! Insert new html_raw error!')
+            return False
+        return True
+
+    def insert_media_link(self, visual_row):
+        """
+        新增 news page 的原始 media link 資料
+
+        Keyword arguments:
+            media_row (dictionary) -- 新聞頁原始 HTML 資料內容
+        """
+        sql = "INSERT INTO `visual_link`(`type`, `list_id`, `url_md5`, `visual_src`, `caption`, `created_at`) \
+               VALUES (%s, %s, %s, %s, %s, %s)"
+        params = (
+            visual_row['visual_type'],
+            visual_row['list_id'],
+            visual_row['url_md5'],
+            visual_row['visual_src'],
+            visual_row['caption'],
             time.strftime('%Y-%m-%d %H:%M:%S')
         )
 
