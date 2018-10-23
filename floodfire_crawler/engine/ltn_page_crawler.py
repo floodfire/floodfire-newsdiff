@@ -100,6 +100,20 @@ class LtnPageCrawler(BasePageCrawler):
         # -- 取出記者 ---
         page['authors'] = self.extract_author(page['body'])
 
+        # -- 取出視覺資料連結（圖片） ---
+        page['visual_contents'] = list()
+
+        visuals = article.find_all('span', class_='ph_b ph_d1 tb-c')
+        
+        for visual in visuals:
+            img = visual.find('img')
+            caption = visual.find('span', class_='ph_d').text.strip()
+            page['visual_contents'].append(
+                {
+                    'type': 1,
+                    'visual_src': img['data-original'],
+                    'caption': caption
+                })
         return page
 
     def __ec_category(self, soup):
@@ -123,6 +137,19 @@ class LtnPageCrawler(BasePageCrawler):
 
         # -- 取出記者 ---
         page['authors'] = self.extract_author(page['body'])
+
+        # -- 取出視覺資料連結（圖片） ---
+        page['visual_contents'] = list()
+        visuals = article_content.find_all('span', class_='ph_b ph_d1')
+        for visual in visuals:
+            img = visual.find('img')
+            caption = visual.find('span', class_='ph_d').text.strip()
+            page['visual_contents'].append(
+                {
+                    'type': 1,
+                    'visual_src': img['src'],
+                    'caption': caption
+                })
         return page
 
     def __sports_category(self, soup):
@@ -145,6 +172,19 @@ class LtnPageCrawler(BasePageCrawler):
         
         # -- 取出記者 ---
         page['authors'] = self.extract_author(page['body'])
+        
+        # -- 取出視覺資料連結（圖片） ---
+        page['visual_contents'] = list()
+        visuals = article_content.find_all('span', class_='ph_b ph_d1')
+        for visual in visuals:
+            img = visual.find('img')
+            caption = visual.find('span', class_='ph_d').text.strip()
+            page['visual_contents'].append(
+                {
+                    'type': 1,
+                    'visual_src': img['src'],
+                    'caption': caption
+                })
         return page
 
     def __talk_category(self, soup):
@@ -200,6 +240,19 @@ class LtnPageCrawler(BasePageCrawler):
         # -- 取出記者 ---
         author = article_title.find('p', class_='auther').find('span').text.strip()
         page['authors'] = re.findall(r'文／記者(\w*)', author)
+        
+        # -- 取出視覺資料連結（圖片） ---
+        page['visual_contents'] = list()
+        visuals = article_content.find_all('span', class_=['ph_b', 'ph_d1'])
+        for visual in visuals:
+            img = visual.find('img')
+            caption = visual.find('span', class_='ph_d').text.strip()
+            page['visual_contents'].append(
+                {
+                    'type': 1,
+                    'visual_src': img['src'],
+                    'caption': caption
+                })
         return page
 
     def __3c_category(self, soup):
@@ -223,6 +276,20 @@ class LtnPageCrawler(BasePageCrawler):
         # -- 取出記者 ---
         author = article.find('div', class_='writer').find('span').text.strip()
         page['authors'] = re.findall(r'文／記者(\w*)', author)
+        
+        # -- 取出視覺資料連結（圖片） ---
+        page['visual_contents'] = list()
+
+        visuals = article_content.find_all('span', class_='ph_b ph_d1 ')
+        for visual in visuals:
+            img = visual.find('img')
+            caption = visual.find('span', class_='ph_d').text.strip()
+            page['visual_contents'].append(
+                {
+                    'type': 1,
+                    'visual_src': img['src'],
+                    'caption': caption
+                })
         return page
 
     def __market_category(self, soup):
@@ -259,6 +326,19 @@ class LtnPageCrawler(BasePageCrawler):
         # -- 取出記者 ---
         author = article_content.find('span', class_='writer').text.strip()
         page['authors'] = re.findall(r'文／記者(\w*)', author)
+        
+        # -- 取出視覺資料連結（圖片） ---
+        page['visual_contents'] = list()
+        visuals = article_content.find_all('span', class_=['ph_b', 'ph_d1'])
+        for visual in visuals:
+            img = visual.find('img')
+            caption = visual.find('span', class_='ph_d').text.strip()
+            page['visual_contents'].append(
+                {
+                    'type': 1,
+                    'visual_src': img['src'],
+                    'caption': caption
+                })
         return page
 
     def __playing_category(self, soup):
@@ -283,6 +363,22 @@ class LtnPageCrawler(BasePageCrawler):
         # -- 取出記者 ---
         author = article_title.find('span').text.strip()
         page['authors'] = re.findall(r'文／記者(\w*)', author)
+        
+        # -- 取出視覺資料連結（圖片） ---
+        page['visual_contents'] = list()
+        visuals = article_content.find_all('span', class_=['ph_b', 'ph_d1'])
+        for visual in visuals:
+            img = visual.find('img')
+            if visual.find('span', class_='ph_d'):
+                caption = visual.find('span', class_='ph_d').text.strip()
+            else:
+                caption = ""
+            page['visual_contents'].append(
+                {
+                    'type': 1,
+                    'visual_src': img['src'],
+                    'caption': caption
+                })
         return page
 
     def __health_category(self, soup):
@@ -441,7 +537,7 @@ class LtnPageCrawler(BasePageCrawler):
         self.logme.info('Crawled ' + str(crawl_count) + ' ' + self.code_name + '-news lists.')
         
         # 單頁測試
-        # status_code, html_content = self.fetch_html('http://news.ltn.com.tw/news/society/breakingnews/2589427')
+        # status_code, html_content = self.fetch_html('http://playing.ltn.com.tw/article/10952')
         # if status_code == requests.codes.ok:
         #     page_type = self.extract_type(html_content['redirected_url'])
         #     soup = BeautifulSoup(html_content['html'], 'html.parser')
