@@ -194,7 +194,7 @@ class FloodfireStorage():
             return False
         return True
 
-    def insert_media_link(self, visual_row):
+    def insert_visual_link(self, visual_row):
         """
         新增 news page 的原始 media link 資料
 
@@ -204,7 +204,7 @@ class FloodfireStorage():
         sql = "INSERT INTO `visual_link`(`type`, `list_id`, `url_md5`, `visual_src`, `caption`, `created_at`) \
                VALUES (%s, %s, %s, %s, %s, %s)"
         params = (
-            visual_row['visual_type'],
+            visual_row['type'],
             visual_row['list_id'],
             visual_row['url_md5'],
             visual_row['visual_src'],

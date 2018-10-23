@@ -76,7 +76,7 @@ class LtnPageCrawler(BasePageCrawler):
             page['visual_contents'].append(
                 {
                     'type': 1,
-                    'src': img['src'],
+                    'visual_src': img['src'],
                     'caption': img['title']
                 })
         
@@ -386,59 +386,73 @@ class LtnPageCrawler(BasePageCrawler):
         # 本次的爬抓計數
         crawl_count = 0
 
-        # for row in crawl_list:
-        #     try:
-        #         status_code, html_content = self.fetch_html(row['url'])
-        #         if status_code == requests.codes.ok:
-        #             page_type = self.extract_type(html_content['redirected_url'])
-        #             print('crawling...[{}] id: {}'.format(page_type, row['id']))
+        for row in crawl_list:
+            try:
+                status_code, html_content = self.fetch_html(row['url'])
+                if status_code == requests.codes.ok:
+                    page_type = self.extract_type(html_content['redirected_url'])
+                    print('crawling...[{}] id: {}'.format(page_type, row['id']))
 
-        #             if page_raw:
-        #                 news_page_raw = dict()
-        #                 news_page_raw['list_id'] = row['id']
-        #                 news_page_raw['url'] = row['url']
-        #                 news_page_raw['url_md5'] = row['url_md5']
-        #                 news_page_raw['page_content'] =  self.compress_html(html_content['html'])
-        #                 self.floodfire_storage.insert_page_raw(news_page_raw)
-        #                 print('Save ' + str(row['id']) + ' page Raw.')
+                    if page_raw:
+                        news_page_raw = dict()
+                        news_page_raw['list_id'] = row['id']
+                        news_page_raw['url'] = row['url']
+                        news_page_raw['url_md5'] = row['url_md5']
+                        news_page_raw['page_content'] =  self.compress_html(html_content['html'])
+                        self.floodfire_storage.insert_page_raw(news_page_raw)
+                        print('Save ' + str(row['id']) + ' page Raw.')
                     
-        #             soup = BeautifulSoup(html_content['html'], 'html.parser')
-        #             news_page = self.fetch_news_content(page_type, soup)
-        #             news_page['list_id'] = row['id']
-        #             news_page['url'] = row['url']
-        #             news_page['url_md5'] = row['url_md5']
-        #             news_page['redirected_url'] = html_content['redirected_url']
-        #             news_page['source_id'] = source_id
-        #             news_page['image'] = 0
-        #             news_page['video'] = 0
+                    soup = BeautifulSoup(html_content['html'], 'html.parser')
+                    news_page = self.fetch_news_content(page_type, soup)
+                    news_page['list_id'] = row['id']
+                    news_page['url'] = row['url']
+                    news_page['url_md5'] = row['url_md5']
+                    news_page['redirected_url'] = html_content['redirected_url']
+                    news_page['source_id'] = source_id
+                    news_page['image'] = (len(news_page['visual_contents']) > 0)
+                    news_page['video'] = 0
 
-        #             if self.floodfire_storage.insert_page(news_page):
-        #                 # 更新爬抓次數記錄
-        #                 self.floodfire_storage.update_list_crawlercount(row['url_md5'])
-        #                 # 本次爬抓計數+1
-        #                 crawl_count += 1
-        #             else:
-        #                 # 更新錯誤次數記錄
-        #                 self.floodfire_storage.update_list_errorcount(row['url_md5'])
-        #             # 隨機睡 2~6 秒再進入下一筆抓取
-        #             sleep(randint(2, 6))
-        #         else:
-        #             # get 網頁失敗的時候更新 error count
-        #             self.floodfire_storage.update_list_errorcount(row['url_md5'])
-        #     except Exception as e:
-        #         self.logme.exception('error: list-' + str(row['id']) + str(e.args))
-        #         # 更新錯誤次數記錄
-        #         self.floodfire_storage.update_list_errorcount(row['url_md5'])
-        #         pass
-        # self.logme.info('Crawled ' + str(crawl_count) + ' ' + self.code_name + '-news lists.')
+                    if self.floodfire_storage.insert_page(news_page):
+                        # 更新爬抓次數記錄
+                        self.floodfire_storage.update_list_crawlercount(row['url_md5'])
+                        # 本次爬抓計數+1
+                        crawl_count += 1
+                    else:
+                        # 更新錯誤次數記錄
+                        self.floodfire_storage.update_list_errorcount(row['url_md5'])
+                    
+                    # 儲存圖片或影像資訊
+                    if page_visual and len(news_page['visual_contents']) > 0:
+                        for vistual_row in news_page['visual_contents']:
+                            vistual_row['list_id'] = row['id']
+                            vistual_row['url_md5'] = row['url_md5']
+                            self.floodfire_storage.insert_visual_link(vistual_row)
+                    
+                    # 隨機睡 2~6 秒再進入下一筆抓取
+                    sleep(randint(2, 6))
+                else:
+                    # get 網頁失敗的時候更新 error count
+                    self.floodfire_storage.update_list_errorcount(row['url_md5'])
+            except Exception as e:
+                self.logme.exception('error: list-' + str(row['id']) + str(e.args))
+                # 更新錯誤次數記錄
+                self.floodfire_storage.update_list_errorcount(row['url_md5'])
+                pass
+        self.logme.info('Crawled ' + str(crawl_count) + ' ' + self.code_name + '-news lists.')
         
         # 單頁測試
-        status_code, html_content = self.fetch_html('http://news.ltn.com.tw/news/politics/breakingnews/2587618')
-        if status_code == requests.codes.ok:
-            page_type = self.extract_type(html_content['redirected_url'])
-            soup = BeautifulSoup(html_content['html'], 'html.parser')
-            news_page = self.fetch_news_content(page_type, soup)
-            print(news_page)
+        # status_code, html_content = self.fetch_html('http://news.ltn.com.tw/news/society/breakingnews/2589427')
+        # if status_code == requests.codes.ok:
+        #     page_type = self.extract_type(html_content['redirected_url'])
+        #     soup = BeautifulSoup(html_content['html'], 'html.parser')
+        #     news_page = self.fetch_news_content(page_type, soup)
+        #     print(news_page)
+        #     # 儲存圖片或影像資訊
+        #     if page_visual and len(news_page['visual_contents']) > 0:
+        #         for vistual_row in news_page['visual_contents']:
+        #             vistual_row['list_id'] = 100
+        #             vistual_row['url_md5'] = '60420fb89e8141139755f7f99ddf8e4e'
+        #             self.floodfire_storage.insert_visual_link(vistual_row)
 
             # minhtml = self.compress_html(html_content['html'])
             # print(minhtml)
