@@ -67,6 +67,19 @@ class LtnPageCrawler(BasePageCrawler):
 
         # -- 取出記者 ---
         page['authors'] = self.extract_author(page['body'])
+
+        # -- 取出視覺資料連結（圖片） ---
+        page['visual_contents'] = list()
+
+        imgs = article_content.find_all('img')
+        for img in imgs:
+            page['visual_contents'].append(
+                {
+                    'type': 1,
+                    'visual_src': img['src'],
+                    'caption': img['title']
+                })
+        
         return page
 
     def __ent_category(self, soup):
@@ -359,7 +372,7 @@ class LtnPageCrawler(BasePageCrawler):
         minhtml = htmlmin.minify(page_html, remove_empty_space=True)
         return minhtml
     
-    def run(self, page_raw=False, page_diff=False):
+    def run(self, page_raw=False, page_diff=False, page_visual=False):
         """
         程式進入點
         """
@@ -396,7 +409,7 @@ class LtnPageCrawler(BasePageCrawler):
                     news_page['url_md5'] = row['url_md5']
                     news_page['redirected_url'] = html_content['redirected_url']
                     news_page['source_id'] = source_id
-                    news_page['image'] = 0
+                    news_page['image'] = (len(news_page['visual_contents']) > 0)
                     news_page['video'] = 0
 
                     if self.floodfire_storage.insert_page(news_page):
@@ -407,6 +420,14 @@ class LtnPageCrawler(BasePageCrawler):
                     else:
                         # 更新錯誤次數記錄
                         self.floodfire_storage.update_list_errorcount(row['url_md5'])
+                    
+                    # 儲存圖片或影像資訊
+                    if page_visual and len(news_page['visual_contents']) > 0:
+                        for vistual_row in news_page['visual_contents']:
+                            vistual_row['list_id'] = row['id']
+                            vistual_row['url_md5'] = row['url_md5']
+                            self.floodfire_storage.insert_visual_link(vistual_row)
+                    
                     # 隨機睡 2~6 秒再進入下一筆抓取
                     sleep(randint(2, 6))
                 else:
@@ -420,12 +441,18 @@ class LtnPageCrawler(BasePageCrawler):
         self.logme.info('Crawled ' + str(crawl_count) + ' ' + self.code_name + '-news lists.')
         
         # 單頁測試
-        # status_code, html_content = self.fetch_html('http://news.ltn.com.tw/news/world/breakingnews/2580179')
+        # status_code, html_content = self.fetch_html('http://news.ltn.com.tw/news/society/breakingnews/2589427')
         # if status_code == requests.codes.ok:
         #     page_type = self.extract_type(html_content['redirected_url'])
         #     soup = BeautifulSoup(html_content['html'], 'html.parser')
         #     news_page = self.fetch_news_content(page_type, soup)
         #     print(news_page)
+        #     # 儲存圖片或影像資訊
+        #     if page_visual and len(news_page['visual_contents']) > 0:
+        #         for vistual_row in news_page['visual_contents']:
+        #             vistual_row['list_id'] = 100
+        #             vistual_row['url_md5'] = '60420fb89e8141139755f7f99ddf8e4e'
+        #             self.floodfire_storage.insert_visual_link(vistual_row)
 
-        #     minhtml = self.compress_html(html_content['html'])
-        #     print(minhtml)
+            # minhtml = self.compress_html(html_content['html'])
+            # print(minhtml)
