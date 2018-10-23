@@ -79,14 +79,34 @@ class ApdPageCrawler(BasePageCrawler):
         # --- 取出圖片數 ---
         #has_image
         cover_img = soup.findAll('div',{'class':'ndAritcle_headPic'})
-        foot_img = [y['src'] for y in soup.select('figure img') if y['src'] not in fake_img_list]
+        foot_img = [y for y in [x for x in soup.select('figure') if x.img] if y.img['src'] not in fake_img_list]
         page['image'] = (len(foot_img) + len(cover_img))
-        #has_video
-        
-        # --- 取出影片數 ---        
+
+        # -- 取出視覺資料連結（圖片） ---
+        page['visual_contents'] = list()
+        imgs = cover_img + foot_img
+        for img in imgs:
+            page['visual_contents'].append({
+                    'type': 1,
+                    'visual_src': img.img['src'],
+                    'caption': img.text
+                })
+
+        # --- 取出影片數 ---
+        #has_video        
         has_video = 1 if soup.find('div',{'id':'videobox'}) else 0
         page['video'] = has_video
         
+        # -- 取出視覺資料連結（影片） ---
+        if(has_video>0):
+            video_box = soup.find('div',{'id':'videobox'})
+            video_url = re.findall('https?://(?:[-\w./])+.(?:mp4)', video_box.select('script')[-1].text)[0]
+            page['visual_contents'].append({
+                'type': 2,
+                'visual_src': video_url,
+                'caption': ''
+            })
+
         """
         #可以擷取影片網址以及影片截圖
         video_box = soup.find('div',{'id':'videobox'})
@@ -114,7 +134,7 @@ class ApdPageCrawler(BasePageCrawler):
         minhtml = htmlmin.minify(page_html, remove_empty_space=True)
         return minhtml
     
-    def run(self, page_raw=False, page_diff=False):
+    def run(self, page_raw=False, page_diff=False, page_visual = False):
         """
         程式進入點
         """
@@ -163,6 +183,14 @@ class ApdPageCrawler(BasePageCrawler):
                     else:
                         # 更新錯誤次數記錄
                         self.floodfire_storage.update_list_errorcount(row['url_md5'])
+
+                    # 儲存圖片或影像資訊
+                    if page_visual and len(news_page['visual_contents']) > 0:
+                        for vistual_row in news_page['visual_contents']:
+                            vistual_row['list_id'] = row['id']
+                            vistual_row['url_md5'] = row['url_md5']
+                            self.floodfire_storage.insert_visual_link(vistual_row)
+                    
                     # 隨機睡 2~6 秒再進入下一筆抓取
                     sleep(randint(2, 6))
                 else:
