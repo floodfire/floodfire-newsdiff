@@ -39,6 +39,9 @@ class LtnListCrawler(BaseListCrawler):
         return response.status_code, resp_content
 
     def fetch_list(self, soup):
+        """
+        傳回 HTML 中所有的新聞 List
+        """
         news = []
         news_rows = soup.find('ul', 'imm').find_all('li')
         #md5hash = md5()
