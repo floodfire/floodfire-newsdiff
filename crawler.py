@@ -12,6 +12,7 @@ from floodfire_crawler.engine.ett_list_crawler import EttListCrawler
 from floodfire_crawler.engine.ltn_page_crawler import LtnPageCrawler
 from floodfire_crawler.engine.apd_page_crawler import ApdPageCrawler
 from floodfire_crawler.engine.cnt_list_crawler import CntListCrawler
+from floodfire_crawler.engine.cnt_page_crawler import CntPageCrawler
 
 class Crawler():
     def __init__(self, args):
@@ -49,19 +50,20 @@ class Crawler():
             plc.url = 'https://tw.appledaily.com/new'
             plc.run()
         elif self.args.typeof == 'page':
-            plc = ApdPageCrawler(self.config, self.logme)
-            plc.run(self.args.raw, self.args.diff, self.args.visual)
+            ppc = ApdPageCrawler(self.config, self.logme)
+            ppc.run(self.args.raw, self.args.diff, self.args.visual)
 
     def __cnt(self):
         """
         中國時報執行區間
         """
         if self.args.typeof == 'list':
-            llc = CntListCrawler(self.config)
-            llc.url = 'https://www.chinatimes.com/realtimenews'
-            llc.run()
+            clc = CntListCrawler(self.config)
+            clc.url = 'https://www.chinatimes.com/realtimenews'
+            clc.run()
         elif self.args.typeof == 'page':
-            pass
+            cpc = CntPageCrawler(self.config, self.logme)
+            cpc.run(self.args.raw, self.args.diff, self.args.visual)
           
     def __udn(self):
         """
