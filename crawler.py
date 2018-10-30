@@ -9,6 +9,7 @@ from floodfire_crawler.engine.ltn_list_crawler import LtnListCrawler
 from floodfire_crawler.engine.apd_list_crawler import ApdListCrawler
 from floodfire_crawler.engine.ltn_page_crawler import LtnPageCrawler
 from floodfire_crawler.engine.apd_page_crawler import ApdPageCrawler
+from floodfire_crawler.engine.cnt_list_crawler import CntListCrawler
 
 class Crawler():
     def __init__(self, args):
@@ -25,6 +26,9 @@ class Crawler():
         self.logme.addHandler(file_handler_err)
         
     def __ltn(self):
+        """
+        自由時報執行區間
+        """
         if self.args.typeof == 'list':
             llc = LtnListCrawler(self.config)
             llc.url = 'http://news.ltn.com.tw/list/breakingnews'
@@ -35,6 +39,9 @@ class Crawler():
             lpc.run(self.args.raw, self.args.diff, self.args.visual)
     
     def __apd(self):
+        """
+        蘋果日報執行區間
+        """
         if self.args.typeof == 'list':
             plc = ApdListCrawler(self.config)
             plc.url = 'https://tw.appledaily.com/new'
@@ -42,7 +49,18 @@ class Crawler():
         elif self.args.typeof == 'page':
             plc = ApdPageCrawler(self.config, self.logme)
             plc.run(self.args.raw, self.args.diff, self.args.visual)
-        
+
+    def __cnt(self):
+        """
+        中國時報執行區間
+        """
+        if self.args.typeof == 'list':
+            llc = CntListCrawler(self.config)
+            llc.url = 'https://www.chinatimes.com/realtimenews'
+            llc.run()
+        elif self.args.typeof == 'page':
+            pass
+    
     def main(self):
  
         if self.args.media == 'ltn':
@@ -50,6 +68,9 @@ class Crawler():
             
         if self.args.media == 'apd':
             self.__apd()
+
+        if self.args.media == 'cnt':
+            self.__cnt()
 
 if __name__ == '__main__':
     parser = ArgumentParser(description="水火新聞爬蟲")
