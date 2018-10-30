@@ -62,7 +62,7 @@ class CntListCrawler(BaseListCrawler):
     
     def get_category(self, news_row):
         """
-        傳回分類
+        取得新聞分類
         """
         cate_list = []
         categories = news_row.find('div', class_='kindOf').find_all('a')
@@ -71,7 +71,43 @@ class CntListCrawler(BaseListCrawler):
         return ','.join(cate_list)
 
     def get_last(self, soup):
-        pass
+        """
+        取得頁面中的最後一頁
+        """
+        pagination_a_tag = soup.find('div', class_='pagination').find_all('a')
+        href_uri = pagination_a_tag[-1]['href']
+        last_page = href_uri.rsplit('=', 1)[-1]
+        return int(last_page)
+
+    def make_a_round(self, start_page, end_page):
+        """
+        指定頁面區間抓取
+        Keyword arguments:
+            start_page (int) -- 起始頁面
+            end_page (int) -- 結束頁面
+        """
+        consecutive = 0
+        for page in range(start_page, end_page+1):
+            # 如果連續超過 20 組就停止
+            if consecutive > 20:
+                    print('News consecutive more than 20, stop crawler!!')
+                    break
+            page_url = self.url + '?page=' + str(page)
+            print(page_url)
+            sleep(2)
+
+            status_code, html_content = self.fetch_html(page_url)
+            if status_code == requests.codes.ok:
+                soup = BeautifulSoup(html_content, 'html.parser')
+                news_list = self.fetch_list(soup)
+                #print(news_list)
+                for news in news_list:
+                    if(self.floodfire_storage.check_list(news['url_md5']) == 0):
+                        self.floodfire_storage.insert_list(news)
+                        consecutive = 0
+                    else:
+                        print(news['title']+' exist! skip insert.')
+                        consecutive += 1
 
     def run(self):
         """
@@ -80,4 +116,6 @@ class CntListCrawler(BaseListCrawler):
         status_code, html_content = self.fetch_html(self.url)
         if status_code == requests.codes.ok:
             soup = BeautifulSoup(html_content, 'html.parser')
-            print(self.fetch_list(soup))
+            # print(self.fetch_list(soup))
+            last_page = self.get_last(soup)
+            self.make_a_round(1, last_page)

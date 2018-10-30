@@ -21,7 +21,9 @@ class LtnListCrawler(BaseListCrawler):
         self.floodfire_storage = FloodfireStorage(config)
 
     def fetch_html(self, url):
-
+        """
+        傳回 List 頁面的 HTML
+        """
         try:
             headers = {
                 'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36',
@@ -59,12 +61,18 @@ class LtnListCrawler(BaseListCrawler):
         return news
 
     def get_last(self, soup):
+        """
+        取得頁面中的最後一頁
+        """
         last_a_tag = soup.find('div', class_='pagination').find('a', class_='p_last')
         href_uri = last_a_tag['href']
         last_page = href_uri.rsplit('/', 1)[-1]
         return int(last_page)
 
     def get_category(self, news_row):
+        """
+        取得新聞分類
+        """
         cate_list = []
         categories = news_row.find('div', class_='tagarea').find_all('a')
         for category in categories:
@@ -72,6 +80,12 @@ class LtnListCrawler(BaseListCrawler):
         return ','.join(cate_list)
 
     def make_a_round(self, start_page, end_page):
+        """
+        指定頁面區間抓取
+        Keyword arguments:
+            start_page (int) -- 起始頁面
+            end_page (int) -- 結束頁面
+        """
         consecutive = 0
         for page in range(start_page, end_page+1):
             if consecutive > 20:
