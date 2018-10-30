@@ -8,7 +8,7 @@ from floodfire_crawler.core.base_list_crawler import BaseListCrawler
 from floodfire_crawler.storage.rdb_storage import FloodfireStorage
 import time
 
-class UdnListCrawler(BaseListCrawler):
+class EttListCrawler(BaseListCrawler):
 
     @property
     def url(self):
@@ -35,20 +35,38 @@ class UdnListCrawler(BaseListCrawler):
 	
     def fetch_list(self, soup):
         news = []
-        news_rows = soup.find_all("dt", {"class": "lazyload"})
+        news_rows = soup.find("div",{"class":"part_list_2"}).find_all('h3')
         #md5hash = md5()
         for news_row in news_rows:
-            link_a = news_row.find_all("a")[0]
+            link_a = news_row.a
             md5hash = md5(link_a['href'].split("?")[0].encode('utf-8')).hexdigest()
             raw = {
-                'title': news_row.find_all("a")[-1].text.strip().replace("　"," ").replace("\u200b",""),
-                'url': "https://udn.com"+link_a['href'].split("?")[0],
+                'title': news_row.a.text.strip().replace("　"," ").replace("\u200b",""),
+                'url': "https://www.ettoday.net"+link_a['href'].split("?")[0],
                 'url_md5': md5hash,
-                'source_id': 8,
-                'category': news_row.find_all("a")[-2].text
+                'source_id': 4,
+                'category': news_row.em.text
             }
             news.append(raw)
         return news
+
+    def fetch_list2(self, soup):
+        news = []
+        news_rows = soup.find_all('h3')
+        #md5hash = md5()
+        for news_row in news_rows:
+            link_a = news_row.a
+            md5hash = md5(link_a['href'].split("?")[0].encode('utf-8')).hexdigest()
+            raw = {
+                'title': news_row.a.text.strip().replace("　"," ").replace("\u200b",""),
+                'url': "https://www.ettoday.net"+link_a['href'].split("?")[0],
+                'url_md5': md5hash,
+                'source_id': 4,
+                'category': news_row.em.text
+            }
+            news.append(raw)
+        return news
+
 
     def make_a_round(self):
         #first page
@@ -57,8 +75,6 @@ class UdnListCrawler(BaseListCrawler):
         print(page_url)
         sleep(2)
         html = self.fetch_html(page_url)
-        #time stamp for next pages
-        stamp = round(time.time()*1000)
         
         soup = BeautifulSoup(html, 'html.parser')
         news_list = self.fetch_list(soup)
@@ -71,19 +87,39 @@ class UdnListCrawler(BaseListCrawler):
                 print(news['title']+' exist! skip insert.')
                 consecutive += 1
 
-        total_pages = int(soup.find_all("div",{"class":"showmore"})[0].a['data-totalpages'])
+        #starting from page2
+        offset = 1
+        page_url = "https://www.ettoday.net/show_roll.php"
 
-        #next page
-        for page in range(2, total_pages+1):
+        while(1):
+            offset = offset+1
             if consecutive > 20:
                 print('News consecutive more than 20, stop crawler!!')
                 break
-            page_url = "https://udn.com/news/get_breaks_article/"+str(page)+"/1/0?_="+str(stamp+page)
-            print(page_url)
+
+            headers = {
+            'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36',
+            }
+
+            body = {
+                'offset': offset,
+                'tPage': '3',
+                'tFile': time.strftime('%Y%m%d') + '.xml',
+                'tOt': '0',
+                'tSi': '100',
+                'tAr': '0'
+            }
+            print(page_url+", page"+str(offset))
             sleep(2)
-            html = self.fetch_html(page_url)
+
+            req = requests.post(page_url, headers = headers, data = body, timeout = 15)
+            html = req.text
+            #end of the pages
+            if(html == ''):
+                break
+
             soup = BeautifulSoup(html, 'html.parser')
-            news_list = self.fetch_list(soup)
+            news_list = self.fetch_list2(soup)
             #print(news_list)
             for news in news_list:
                 if(self.floodfire_storage.check_list(news['url_md5']) == 0):
@@ -92,7 +128,6 @@ class UdnListCrawler(BaseListCrawler):
                 else:
                     print(news['title']+' exist! skip insert.')
                     consecutive += 1
-            page += 1
 
 
     def run(self):
