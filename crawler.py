@@ -7,6 +7,7 @@ from argparse import ArgumentParser
 from configparser import ConfigParser
 from floodfire_crawler.engine.ltn_list_crawler import LtnListCrawler
 from floodfire_crawler.engine.apd_list_crawler import ApdListCrawler
+from floodfire_crawler.engine.udn_list_crawler import UdnListCrawler
 from floodfire_crawler.engine.ltn_page_crawler import LtnPageCrawler
 from floodfire_crawler.engine.apd_page_crawler import ApdPageCrawler
 
@@ -42,7 +43,15 @@ class Crawler():
         elif self.args.typeof == 'page':
             plc = ApdPageCrawler(self.config, self.logme)
             plc.run(self.args.raw, self.args.diff, self.args.visual)
-        
+
+    def __udn(self):
+        if self.args.typeof == 'list':
+            udn = UdnListCrawler(self.config)
+            udn.url = 'https://udn.com/news/breaknews/1'
+            udn.run()
+        elif self.args.typeof == 'page':
+            pass
+
     def main(self):
  
         if self.args.media == 'ltn':
@@ -50,6 +59,9 @@ class Crawler():
             
         if self.args.media == 'apd':
             self.__apd()
+
+        if self.args.media == 'udn':
+            self.__udn()
 
 if __name__ == '__main__':
     parser = ArgumentParser(description="水火新聞爬蟲")
