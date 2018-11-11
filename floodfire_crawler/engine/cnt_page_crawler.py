@@ -14,6 +14,7 @@ class CntPageCrawler(BasePageCrawler):
     
     def __init__(self, config, logme):
         self.code_name = "cnt"
+        self.regex_pattern = re.compile(r"var yID = \'(\w.*)\';")
         self.floodfire_storage = FloodfireStorage(config)
         self.logme = logme
     
@@ -63,11 +64,11 @@ class CntPageCrawler(BasePageCrawler):
         page['publish_time'] = self.fetch_publish_time(article_content)
         
         # --- 取出記者 ---
-        page['authors'] = article_content.find('div', class_='rp_name').find('cite').text.strip()
+        page['authors'] = self.extract_author(article_content)
         
         # --- 取出關鍵字 ---
         keywords = soup.find('meta', attrs={'name':'news_keywords'})
-        page['keywords'] = keywords['content'].strip()
+        page['keywords'] = keywords['content'].strip().split(',')
 
         # -- 取出視覺資料連結（圖片） ---
         page['visual_contents'] = list()
@@ -91,17 +92,18 @@ class CntPageCrawler(BasePageCrawler):
         # -- 取出視覺資料連結（影片） ---
         if soup.find('div', class_='video'):
             video = soup.find('div', class_='video')
-            if video.find('div', id='jw-container'):
-                print(video.find('div', id='jw-container'))
-                # page['visual_contents'].append(
-                # {
-                #     'type': 2,
-                #     'visual_src': video.find('div', id='jw-container').find('iframe')['src'],
-                #     'caption': video.find('div', id='jw-container').find('figcaption').text.strip()
-                # })
-        print(soup.find_all('div', class_='video_iframe'))
+            script_tags = video.parent.find_all('script')
+            for jscript in script_tags:
+                yid = self.regex_pattern.findall(jscript.text)
+                if yid:
+                    page['visual_contents'].append(
+                        {
+                            'type': 2,
+                            'visual_src': 'https://www.youtube.com/embed/' + yid[0],
+                            'caption': video.find('figcaption').text.strip()
+                        })
         
-        # print(page)
+        return page
 
     def fetch_publish_time(self, soup):
         """
@@ -113,6 +115,22 @@ class CntPageCrawler(BasePageCrawler):
         time = soup.find('time').text.strip()
         news_time = strftime('%Y-%m-%d %H:%M:%S', strptime(time, '%Y年%m月%d日 %H:%M'))
         return news_time
+
+    def extract_author(self, content):
+        """
+        取得記者
+
+        keyward arguments:
+            content (object) -- beautifulsoup object
+        """
+        authors = list()
+        if content.find('div', class_='rp_name').find('cite'):
+            author = content.find('div', class_='rp_name').find('cite').text.strip()
+            authors.append(author)
+        else:
+            author_split = content.find('div', class_='rp_name').text.strip().split('/')
+            authors.append(author_split[0])
+        return authors
 
     def run(self, page_raw=False, page_diff=False, page_visual=False):
         """
@@ -132,16 +150,62 @@ class CntPageCrawler(BasePageCrawler):
         # 本次的爬抓計數
         crawl_count = 0
 
+        for row in crawl_list:
+            try:
+                status_code, html_content = self.fetch_html(row['url'])
+                if status_code == requests.codes.ok:
+                    print('crawling... id: {}'.format(row['id']))
+
+                    if page_raw:
+                        news_page_raw = dict()
+                        news_page_raw['list_id'] = row['id']
+                        news_page_raw['url'] = row['url']
+                        news_page_raw['url_md5'] = row['url_md5']
+                        news_page_raw['page_content'] =  self.compress_html(html_content['html'])
+                        self.floodfire_storage.insert_page_raw(news_page_raw)
+                        print('Save ' + str(row['id']) + ' page Raw.')
+                    
+                    soup = BeautifulSoup(html_content['html'], 'html.parser')
+                    news_page = self.fetch_news_content(soup)
+                    news_page['list_id'] = row['id']
+                    news_page['url'] = row['url']
+                    news_page['url_md5'] = row['url_md5']
+                    news_page['redirected_url'] = html_content['redirected_url']
+                    news_page['source_id'] = source_id
+                    news_page['image'] = len([v for v in news_page['visual_contents'] if v['type']==1])
+                    news_page['video'] = len([v for v in news_page['visual_contents'] if v['type']==2])
+
+                    if self.floodfire_storage.insert_page(news_page):
+                        # 更新爬抓次數記錄
+                        self.floodfire_storage.update_list_crawlercount(row['url_md5'])
+                        # 本次爬抓計數+1
+                        crawl_count += 1
+                    else:
+                        # 更新錯誤次數記錄
+                        self.floodfire_storage.update_list_errorcount(row['url_md5'])
+                    
+                    # 儲存圖片或影像資訊
+                    if page_visual and len(news_page['visual_contents']) > 0:
+                        for vistual_row in news_page['visual_contents']:
+                            vistual_row['list_id'] = row['id']
+                            vistual_row['url_md5'] = row['url_md5']
+                            self.floodfire_storage.insert_visual_link(vistual_row)
+                    
+                    # 隨機睡 2~6 秒再進入下一筆抓取
+                    sleep(randint(2, 6))
+                else:
+                    # get 網頁失敗的時候更新 error count
+                    self.floodfire_storage.update_list_errorcount(row['url_md5'])
+            except Exception as e:
+                self.logme.exception('error: list-' + str(row['id']) + str(e.args))
+                # 更新錯誤次數記錄
+                self.floodfire_storage.update_list_errorcount(row['url_md5'])
+                pass
+        self.logme.info('Crawled ' + str(crawl_count) + ' ' + self.code_name + '-news lists.')
+        
         # 單頁測試
-        status_code, html_content = self.fetch_html('https://www.chinatimes.com/realtimenews/20181106002002-260407')
-        if status_code == requests.codes.ok:
-            # page_type = self.extract_type(html_content['redirected_url'])
-            soup = BeautifulSoup(html_content['html'], 'html.parser')
-            news_page = self.fetch_news_content(soup)
-            # print(news_page)
-            # # 儲存圖片或影像資訊
-            # if page_visual and len(news_page['visual_contents']) > 0:
-            #     for vistual_row in news_page['visual_contents']:
-            #         vistual_row['list_id'] = 100
-            #         vistual_row['url_md5'] = '60420fb89e8141139755f7f99ddf8e4e'
-            #         self.floodfire_storage.insert_visual_link(vistual_row)
+        # status_code, html_content = self.fetch_html('https://www.chinatimes.com/realtimenews/20181111002787-260417')
+        # if status_code == requests.codes.ok:
+        #     soup = BeautifulSoup(html_content['html'], 'html.parser')
+        #     news_page = self.fetch_news_content(soup)
+        #     print(news_page)
