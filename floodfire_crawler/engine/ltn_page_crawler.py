@@ -165,10 +165,12 @@ class LtnPageCrawler(BasePageCrawler):
         page['publish_time'] = article.find('div', class_='c_time').text + ':00'
 
         # --- 取出關鍵字 ---
+        # 2018-11-13 發現體育網頁改版，沒有關鍵字
         page['keywords'] = list()
-        keywords = article.find('div', class_='keyword boxTitle').find_all('a')
-        for keyword in keywords:
-            page['keywords'].append(keyword.text.strip())
+        if article.find('div', class_='keyword boxTitle'):
+            keywords = article.find('div', class_='keyword boxTitle').find_all('a')
+            for keyword in keywords:
+                page['keywords'].append(keyword.text.strip())
         
         # -- 取出記者 ---
         page['authors'] = self.extract_author(page['body'])
@@ -539,7 +541,7 @@ class LtnPageCrawler(BasePageCrawler):
         self.logme.info('Crawled ' + str(crawl_count) + ' ' + self.code_name + '-news lists.')
         
         # 單頁測試
-        # status_code, html_content = self.fetch_html('http://playing.ltn.com.tw/article/10952')
+        # status_code, html_content = self.fetch_html('http://sports.ltn.com.tw/news/breakingnews/2611127')
         # if status_code == requests.codes.ok:
         #     page_type = self.extract_type(html_content['redirected_url'])
         #     soup = BeautifulSoup(html_content['html'], 'html.parser')
