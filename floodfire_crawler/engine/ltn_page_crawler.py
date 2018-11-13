@@ -234,10 +234,12 @@ class LtnPageCrawler(BasePageCrawler):
         page['publish_time'] = strftime('%Y-%m-%d %H:%M:%S', strptime(time_string, '%b. %d %Y %H:%M:%S'))
         
         # --- 取出關鍵字 ---
+        # 2018-11-13 發現時尚網頁改版，沒有關鍵字區段
         page['keywords'] = list()
-        keywords = soup.find('article').find('section', class_='tag boxTitle').find_all('a')
-        for keyword in keywords:
-            page['keywords'].append(keyword.text.strip())
+        if soup.find('article').find('section', class_='tag boxTitle'):
+            keywords = soup.find('article').find('section', class_='tag boxTitle').find_all('a')
+            for keyword in keywords:
+                page['keywords'].append(keyword.text.strip())
         
         # -- 取出記者 ---
         author = article_title.find('p', class_='auther').find('span').text.strip()
