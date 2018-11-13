@@ -11,6 +11,7 @@ from floodfire_crawler.engine.udn_list_crawler import UdnListCrawler
 from floodfire_crawler.engine.ett_list_crawler import EttListCrawler
 from floodfire_crawler.engine.ltn_page_crawler import LtnPageCrawler
 from floodfire_crawler.engine.apd_page_crawler import ApdPageCrawler
+from floodfire_crawler.engine.ett_page_crawler import EttPageCrawler
 from floodfire_crawler.engine.cnt_list_crawler import CntListCrawler
 from floodfire_crawler.engine.cnt_page_crawler import CntPageCrawler
 
@@ -46,12 +47,12 @@ class Crawler():
         蘋果日報執行區間
         """
         if self.args.typeof == 'list':
-            plc = ApdListCrawler(self.config)
-            plc.url = 'https://tw.appledaily.com/new'
-            plc.run()
+            alc = ApdListCrawler(self.config)
+            alc.url = 'https://tw.appledaily.com/new'
+            alc.run()
         elif self.args.typeof == 'page':
-            ppc = ApdPageCrawler(self.config, self.logme)
-            ppc.run(self.args.raw, self.args.diff, self.args.visual)
+            apc = ApdPageCrawler(self.config, self.logme)
+            apc.run(self.args.raw, self.args.diff, self.args.visual)
 
     def __cnt(self):
         """
@@ -81,11 +82,12 @@ class Crawler():
         ETToday執行區間
         """
         if self.args.typeof == 'list':
-            ett = EttListCrawler(self.config)
-            ett.url = 'https://www.ettoday.net/news/news-list.htm'
-            ett.run()
+            elc = EttListCrawler(self.config)
+            elc.url = 'https://www.ettoday.net/news/news-list.htm'
+            elc.run()
         elif self.args.typeof == 'page':
-            pass
+            epc = EttPageCrawler(self.config, self.logme)
+            epc.run(self.args.raw, self.args.diff, self.args.visual)
 
     def main(self):
  
