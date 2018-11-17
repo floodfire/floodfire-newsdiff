@@ -12,6 +12,7 @@ from floodfire_crawler.engine.ett_list_crawler import EttListCrawler
 from floodfire_crawler.engine.ltn_page_crawler import LtnPageCrawler
 from floodfire_crawler.engine.apd_page_crawler import ApdPageCrawler
 from floodfire_crawler.engine.ett_page_crawler import EttPageCrawler
+from floodfire_crawler.engine.udn_page_crawler import UdnPageCrawler
 from floodfire_crawler.engine.cnt_list_crawler import CntListCrawler
 from floodfire_crawler.engine.cnt_page_crawler import CntPageCrawler
 
@@ -71,11 +72,12 @@ class Crawler():
         聯合新聞網執行區間
         """
         if self.args.typeof == 'list':
-            udn = UdnListCrawler(self.config)
-            udn.url = 'https://udn.com/news/breaknews/1'
-            udn.run()
+            ulc = UdnListCrawler(self.config)
+            ulc.url = 'https://udn.com/news/breaknews/1'
+            ulc.run()
         elif self.args.typeof == 'page':
-            pass
+            upc = UdnPageCrawler(self.config, self.logme)
+            upc.run(self.args.raw, self.args.diff, self.args.visual)
     
     def __ett(self):
         """
