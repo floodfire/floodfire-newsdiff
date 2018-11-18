@@ -399,12 +399,13 @@ class LtnPageCrawler(BasePageCrawler):
         visuals = article_content.find_all('span', class_=['ph_b', 'ph_d1'])
         for visual in visuals:
             img = visual.find('img')
-            caption = visual.find('span', class_='ph_d').text.strip()
+            if visual.find('span', class_='ph_d'):
+                caption = visual.find('span', class_='ph_d').text.strip()
             page['visual_contents'].append(
                 {
                     'type': 1,
                     'visual_src': img['src'],
-                    'caption': caption
+                    'caption': caption if (caption) else ''
                 })
         return page
 
@@ -620,7 +621,7 @@ class LtnPageCrawler(BasePageCrawler):
         self.logme.info('Crawled ' + str(crawl_count) + ' ' + self.code_name + '-news lists.')
         
         # 單頁測試
-        # status_code, html_content = self.fetch_html('http://sports.ltn.com.tw/news/breakingnews/2616903')
+        # status_code, html_content = self.fetch_html('http://auto.ltn.com.tw/news/11187/2')
         # if status_code == requests.codes.ok:
         #     page_type = self.extract_type(html_content['redirected_url'])
         #     soup = BeautifulSoup(html_content['html'], 'html.parser')
