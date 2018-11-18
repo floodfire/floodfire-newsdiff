@@ -64,6 +64,12 @@ class LtnPageCrawler(BasePageCrawler):
             keywords = article.find('div', class_='keyword boxTitle').find_all('a')
             for keyword in keywords:
                 page['keywords'].append(keyword.text.strip())
+        elif soup.find('meta', attr={'name':'keywords'}):
+            # 2018-11-18 自由時報全類別改版移除關鍵字區塊，改由 Meta 取得
+            meta_keywords = soup.find('meta', attr={'name':'keywords'})
+            keywords = meta_keywords['content'].split(',')
+            for keyword in keywords:
+                page['keywords'].append(keyword.strip())
 
         # -- 取出記者 ---
         page['authors'] = self.extract_author(page['body'])
@@ -96,6 +102,12 @@ class LtnPageCrawler(BasePageCrawler):
 
         # -- 娛樂新聞沒有關鍵字
         page['keywords'] = list()
+        # 2018-11-18 自由時報全類別改版移除關鍵字區塊，改由 Meta 取得
+        if soup.find('meta', attr={'name':'keywords'}):
+            meta_keywords = soup.find('meta', attr={'name':'keywords'})
+            keywords = meta_keywords['content'].split(',')
+            for keyword in keywords:
+                page['keywords'].append(keyword.strip())
 
         # -- 取出記者 ---
         page['authors'] = self.extract_author(page['body'])
@@ -134,6 +146,12 @@ class LtnPageCrawler(BasePageCrawler):
             keywords = article.find('div', class_='keyword boxTitle').find_all('a')
             for keyword in keywords:
                 page['keywords'].append(keyword.text.strip())
+        elif soup.find('meta', attr={'name':'keywords'}):
+            # 2018-11-18 自由時報全類別改版移除關鍵字區塊，改由 Meta 取得
+            meta_keywords = soup.find('meta', attr={'name':'keywords'})
+            keywords = meta_keywords['content'].split(',')
+            for keyword in keywords:
+                page['keywords'].append(keyword.strip())
 
         # -- 取出記者 ---
         page['authors'] = self.extract_author(page['body'])
@@ -165,12 +183,17 @@ class LtnPageCrawler(BasePageCrawler):
         page['publish_time'] = article.find('div', class_='c_time').text + ':00'
 
         # --- 取出關鍵字 ---
-        # 2018-11-13 發現體育網頁改版，沒有關鍵字
         page['keywords'] = list()
         if article.find('div', class_='keyword boxTitle'):
             keywords = article.find('div', class_='keyword boxTitle').find_all('a')
             for keyword in keywords:
                 page['keywords'].append(keyword.text.strip())
+        elif soup.find('meta', attr={'name':'keywords'}):
+            # 2018-11-18 自由時報全類別改版移除關鍵字區塊，改由 Meta 取得
+            meta_keywords = soup.find('meta', attr={'name':'keywords'})
+            keywords = meta_keywords['content'].split(',')
+            for keyword in keywords:
+                page['keywords'].append(keyword.strip())
         
         # -- 取出記者 ---
         page['authors'] = self.extract_author(page['body'])
@@ -208,9 +231,16 @@ class LtnPageCrawler(BasePageCrawler):
 
         # --- 取出關鍵字 ---
         page['keywords'] = list()
-        keywords = article.find('div', class_='kwtab boxTitle').find_all('a')
-        for keyword in keywords:
-            page['keywords'].append(keyword.text.strip())
+        if article.find('div', class_='kwtab boxTitle'):
+            keywords = article.find('div', class_='kwtab boxTitle').find_all('a')
+            for keyword in keywords:
+                page['keywords'].append(keyword.text.strip())
+        elif soup.find('meta', attr={'name':'keywords'}):
+            # 2018-11-18 自由時報全類別改版移除關鍵字區塊，改由 Meta 取得
+            meta_keywords = soup.find('meta', attr={'name':'keywords'})
+            keywords = meta_keywords['content'].split(',')
+            for keyword in keywords:
+                page['keywords'].append(keyword.strip())
 
         # -- 取出文章作者 ---
         if article.find('div', class_='writer boxTitle'):
@@ -240,6 +270,12 @@ class LtnPageCrawler(BasePageCrawler):
             keywords = soup.find('article').find('section', class_='tag boxTitle').find_all('a')
             for keyword in keywords:
                 page['keywords'].append(keyword.text.strip())
+        elif soup.find('meta', attr={'name':'keywords'}):
+            # 2018-11-18 自由時報全類別改版移除關鍵字區塊，改由 Meta 取得
+            meta_keywords = soup.find('meta', attr={'name':'keywords'})
+            keywords = meta_keywords['content'].split(',')
+            for keyword in keywords:
+                page['keywords'].append(keyword.strip())
         
         # -- 取出記者 ---
         author = article_title.find('p', class_='auther').find('span').text.strip()
@@ -273,9 +309,16 @@ class LtnPageCrawler(BasePageCrawler):
         
         # --- 取出關鍵字 ---
         page['keywords'] = list()
-        keywords = article.find('div', class_='contab boxTitle boxText').find_all('a')
-        for keyword in keywords:
-            page['keywords'].append(keyword.text.strip())
+        if article.find('div', class_='contab boxTitle boxText'):
+            keywords = article.find('div', class_='contab boxTitle boxText').find_all('a')
+            for keyword in keywords:
+                page['keywords'].append(keyword.text.strip())
+        elif soup.find('meta', attr={'name':'keywords'}):
+            # 2018-11-18 自由時報全類別改版移除關鍵字區塊，改由 Meta 取得
+            meta_keywords = soup.find('meta', attr={'name':'keywords'})
+            keywords = meta_keywords['content'].split(',')
+            for keyword in keywords:
+                page['keywords'].append(keyword.strip())
 
         # -- 取出記者 ---
         author = article.find('div', class_='writer').find('span').text.strip()
@@ -323,9 +366,16 @@ class LtnPageCrawler(BasePageCrawler):
 
         # --- 取出關鍵字 ---
         page['keywords'] = list()
-        keywords = soup.find('div', class_='kw2 boxTitle').find_all('a')
-        for keyword in keywords:
-            page['keywords'].append(keyword.text.strip())
+        if soup.find('div', class_='kw2 boxTitle'):
+            keywords = soup.find('div', class_='kw2 boxTitle').find_all('a')
+            for keyword in keywords:
+                page['keywords'].append(keyword.text.strip())
+        elif soup.find('meta', attr={'name':'keywords'}):
+            # 2018-11-18 自由時報全類別改版移除關鍵字區塊，改由 Meta 取得
+            meta_keywords = soup.find('meta', attr={'name':'keywords'})
+            keywords = meta_keywords['content'].split(',')
+            for keyword in keywords:
+                page['keywords'].append(keyword.strip())
 
         # -- 取出記者 ---
         author = article_content.find('span', class_='writer').text.strip()
@@ -360,9 +410,16 @@ class LtnPageCrawler(BasePageCrawler):
         
         # --- 取出關鍵字 ---
         page['keywords'] = list()
-        keywords = soup.find('div', class_='keyword boxTitle').find_all('a')
-        for keyword in keywords:
-            page['keywords'].append(keyword.text.strip())
+        if soup.find('div', class_='keyword boxTitle'):
+            keywords = soup.find('div', class_='keyword boxTitle').find_all('a')
+            for keyword in keywords:
+                page['keywords'].append(keyword.text.strip())
+        elif soup.find('meta', attr={'name':'keywords'}):
+            # 2018-11-18 自由時報全類別改版移除關鍵字區塊，改由 Meta 取得
+            meta_keywords = soup.find('meta', attr={'name':'keywords'})
+            keywords = meta_keywords['content'].split(',')
+            for keyword in keywords:
+                page['keywords'].append(keyword.strip())
 
         # -- 取出記者 ---
         author = article_title.find('span').text.strip()
@@ -399,9 +456,16 @@ class LtnPageCrawler(BasePageCrawler):
 
         # --- 取出關鍵字 ---
         page['keywords'] = list()
-        keywords = article.find('div', class_='keyword boxTitle').find_all('a')
-        for keyword in keywords:
-            page['keywords'].append(keyword.text.strip())
+        if article.find('div', class_='keyword boxTitle'):
+            keywords = article.find('div', class_='keyword boxTitle').find_all('a')
+            for keyword in keywords:
+                page['keywords'].append(keyword.text.strip())
+        elif soup.find('meta', attr={'name':'keywords'}):
+            # 2018-11-18 自由時報全類別改版移除關鍵字區塊，改由 Meta 取得
+            meta_keywords = soup.find('meta', attr={'name':'keywords'})
+            keywords = meta_keywords['content'].split(',')
+            for keyword in keywords:
+                page['keywords'].append(keyword.strip())
         
         # -- 取出記者 ---
         page['authors'] = self.extract_author(page['body'])
