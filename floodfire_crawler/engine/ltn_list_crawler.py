@@ -87,6 +87,7 @@ class LtnListCrawler(BaseListCrawler):
             end_page (int) -- 結束頁面
         """
         consecutive = 0
+        watch_list = ['娛樂', '體育', '財經', '國際', '政治', '生活', '社會', '評論']
         for page in range(start_page, end_page+1):
             if consecutive > 20:
                 print('News consecutive more than 20, stop crawler!!')
@@ -101,6 +102,16 @@ class LtnListCrawler(BaseListCrawler):
                 news_list = self.fetch_list(soup)
                 #print(news_list)
                 for news in news_list:
+                    # 檢查新聞類別有沒有在白名單中，不在名單中直接跳至下次
+                    watch_flag = False
+                    categories = news['category'].split(',')
+                    for category in categories:
+                        if category in watch_list:
+                            watch_flag = True
+                    if not watch_flag:
+                        print('Skip!' + news['category'])
+                        continue
+
                     if(self.floodfire_storage.check_list(news['url_md5']) == 0):
                         self.floodfire_storage.insert_list(news)
                         consecutive = 0
