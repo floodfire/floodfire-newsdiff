@@ -45,12 +45,14 @@ class UdnListCrawler(BaseListCrawler):
                 'url': "https://udn.com"+link_a['href'].split("?")[0],
                 'url_md5': md5hash,
                 'source_id': 8,
-                'category': news_row.find_all("a")[-2].text
+                'category': news_row.find_all("a")[-2].text.strip().replace("　"," ").replace("\u200b","")
             }
             news.append(raw)
         return news
 
     def make_a_round(self):
+        filter = ['社會', '生活', '地方', '全球', '要聞', '文教', '產經', '兩岸', '運動', '股市', '評論', '娛樂']
+
         #first page
         consecutive = 0
         page_url = self.url
@@ -64,7 +66,7 @@ class UdnListCrawler(BaseListCrawler):
         news_list = self.fetch_list(soup)
         #print(news_list)
         for news in news_list:
-            if(self.floodfire_storage.check_list(news['url_md5']) == 0):
+            if(news['category'] in filter and self.floodfire_storage.check_list(news['url_md5']) == 0):
                 self.floodfire_storage.insert_list(news)
                 consecutive = 0
             else:
@@ -86,7 +88,7 @@ class UdnListCrawler(BaseListCrawler):
             news_list = self.fetch_list(soup)
             #print(news_list)
             for news in news_list:
-                if(self.floodfire_storage.check_list(news['url_md5']) == 0):
+                if(news['category'] in filter and  self.floodfire_storage.check_list(news['url_md5']) == 0):
                     self.floodfire_storage.insert_list(news)
                     consecutive = 0
                 else:
@@ -97,16 +99,3 @@ class UdnListCrawler(BaseListCrawler):
 
     def run(self):
         self.make_a_round()
-        """
-        news_list = self.fetch_list(soup)
-        print(news_list)
-        for news in news_list:
-            if(self.floodfire_storage.check_list(news['url_md5']) == 0):
-                self.floodfire_storage.insert_list(news)
-            else:
-                print(news['title']+' exist! skip insert.')
-            
-        last_page = self.get_last(soup)
-        print(last_page)
-        """
-        

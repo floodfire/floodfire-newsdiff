@@ -49,12 +49,14 @@ class ApdListCrawler(BaseListCrawler):
                 'url': link_a['href'],
                 'url_md5': md5hash,
                 'source_id': 1,
-                'category': link_a.h2.text
+                'category': link_a.h2.text.strip().replace("　"," ").replace("\u200b","")
             }
             news.append(raw)
         return news
 
     def make_a_round(self):
+        filter = ['財經', '政治', '社會', '生活', '娛樂', '國際', '體育', '論壇']
+
         consecutive = 0
         start_page = 1
         page = 1
@@ -75,7 +77,7 @@ class ApdListCrawler(BaseListCrawler):
             news_list = self.fetch_list(soup)
             #print(news_list)
             for news in news_list:
-                if(self.floodfire_storage.check_list(news['url_md5']) == 0):
+                if(news['category'] in filter and self.floodfire_storage.check_list(news['url_md5']) == 0):
                     self.floodfire_storage.insert_list(news)
                     consecutive = 0
                 else:
@@ -85,19 +87,4 @@ class ApdListCrawler(BaseListCrawler):
 
 
     def run(self):
-        html = self.fetch_html(self.url)
-        soup = BeautifulSoup(html, 'html.parser')
         self.make_a_round()
-        """
-        news_list = self.fetch_list(soup)
-        print(news_list)
-        for news in news_list:
-            if(self.floodfire_storage.check_list(news['url_md5']) == 0):
-                self.floodfire_storage.insert_list(news)
-            else:
-                print(news['title']+' exist! skip insert.')
-            
-        last_page = self.get_last(soup)
-        print(last_page)
-        """
-        
