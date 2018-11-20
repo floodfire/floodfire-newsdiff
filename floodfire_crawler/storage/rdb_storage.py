@@ -2,6 +2,7 @@
 
 import MySQLdb
 import time
+from datetime import datetime, timedelta
 
 class FloodfireStorage():
     def __init__(self, config):
@@ -125,16 +126,18 @@ class FloodfireStorage():
         """
         rs = {}
         sql = "SELECT `id`, `url`, `url_md5` FROM `list` \
-               WHERE `source_id`=%s AND `crawler_count`= 0 AND `error_count` < 5 Limit 0,50"
+               WHERE `source_id`=%s AND `created_at` >= %s AND `created_at` >= %s"
+        yesterday_time = (datetime.now()+timedelta(-1)).strftime("%Y-%m-%d %H:%M:%S")
+        vote_day = '2018-11-24 00:00:00'
         try:
-            self.cur.execute(sql, (source_id,))
+            self.cur.execute(sql, (source_id, yesterday_time, vote_day, ))
             if self.cur.rowcount > 0:
                 rs = self.cur.fetchall()                
 
         except MySQLdb.OperationalError as e:
             print('Error! Get crawl list error!' + e.args[1])
         return rs
-    
+
     def insert_page(self, page_row):
         """
         新增 news page 資料
