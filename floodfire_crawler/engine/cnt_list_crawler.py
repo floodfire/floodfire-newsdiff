@@ -88,6 +88,7 @@ class CntListCrawler(BaseListCrawler):
             start_page (int) -- 起始頁面
             end_page (int) -- 結束頁面
         """
+        watch_list = ['國際', '政治', '兩岸', '財經', '娛樂', '體育', '生活', '社會', '科技', '軍事']
         consecutive = 0
         for page in range(start_page, end_page+1):
             # 如果連續超過 20 組就停止
@@ -104,7 +105,7 @@ class CntListCrawler(BaseListCrawler):
                 news_list = self.fetch_list(soup)
                 #print(news_list)
                 for news in news_list:
-                    if(self.floodfire_storage.check_list(news['url_md5']) == 0):
+                    if(news['category'] in watch_list and self.floodfire_storage.check_list(news['url_md5']) == 0):
                         self.floodfire_storage.insert_list(news)
                         consecutive = 0
                     else:
