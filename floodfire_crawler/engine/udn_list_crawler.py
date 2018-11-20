@@ -66,7 +66,7 @@ class UdnListCrawler(BaseListCrawler):
         news_list = self.fetch_list(soup)
         #print(news_list)
         for news in news_list:
-            if(self.floodfire_storage.check_list(news['url_md5']) == 0 and news['category'] in filter):
+            if(news['category'] in filter and self.floodfire_storage.check_list(news['url_md5']) == 0):
                 self.floodfire_storage.insert_list(news)
                 consecutive = 0
             else:
@@ -88,7 +88,7 @@ class UdnListCrawler(BaseListCrawler):
             news_list = self.fetch_list(soup)
             #print(news_list)
             for news in news_list:
-                if(self.floodfire_storage.check_list(news['url_md5']) == 0 and news['category'] in filter):
+                if(news['category'] in filter and  self.floodfire_storage.check_list(news['url_md5']) == 0):
                     self.floodfire_storage.insert_list(news)
                     consecutive = 0
                 else:
