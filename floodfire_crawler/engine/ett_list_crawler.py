@@ -69,7 +69,7 @@ class EttListCrawler(BaseListCrawler):
 
 
     def make_a_round(self):
-        filter = ['政治', '地方', '影劇', '國際', '財經', '生活', '社會', '大陸', '體育', '論壇', '軍武']
+        watch_list = ['政治', '地方', '影劇', '國際', '財經', '生活', '社會', '大陸', '體育', '論壇', '軍武']
 
         #first page
         consecutive = 0
@@ -82,7 +82,7 @@ class EttListCrawler(BaseListCrawler):
         news_list = self.fetch_list(soup)
         #print(news_list)
         for news in news_list:
-            if(news['category'] in filter and self.floodfire_storage.check_list(news['url_md5']) == 0):
+            if(news['category'] in watch_list and self.floodfire_storage.check_list(news['url_md5']) == 0):
                 self.floodfire_storage.insert_list(news)
                 consecutive = 0
             else:

@@ -51,7 +51,7 @@ class UdnListCrawler(BaseListCrawler):
         return news
 
     def make_a_round(self):
-        filter = ['社會', '生活', '地方', '全球', '要聞', '文教', '產經', '兩岸', '運動', '股市', '評論', '娛樂']
+        watch_list = ['社會', '生活', '地方', '全球', '要聞', '文教', '產經', '兩岸', '運動', '股市', '評論', '娛樂']
 
         #first page
         consecutive = 0
@@ -66,7 +66,7 @@ class UdnListCrawler(BaseListCrawler):
         news_list = self.fetch_list(soup)
         #print(news_list)
         for news in news_list:
-            if(news['category'] in filter and self.floodfire_storage.check_list(news['url_md5']) == 0):
+            if(news['category'] in watch_list and self.floodfire_storage.check_list(news['url_md5']) == 0):
                 self.floodfire_storage.insert_list(news)
                 consecutive = 0
             else:
