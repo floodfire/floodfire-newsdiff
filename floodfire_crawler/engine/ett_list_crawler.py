@@ -62,13 +62,15 @@ class EttListCrawler(BaseListCrawler):
                 'url': "https://www.ettoday.net"+link_a['href'].split("?")[0],
                 'url_md5': md5hash,
                 'source_id': 4,
-                'category': news_row.em.text
+                'category': news_row.em.text.strip().replace("　"," ").replace("\u200b","")
             }
             news.append(raw)
         return news
 
 
     def make_a_round(self):
+        filter = ['政治', '地方', '影劇', '國際', '財經', '生活', '社會', '大陸', '體育', '論壇', '軍武']
+
         #first page
         consecutive = 0
         page_url = self.url
@@ -80,7 +82,7 @@ class EttListCrawler(BaseListCrawler):
         news_list = self.fetch_list(soup)
         #print(news_list)
         for news in news_list:
-            if(self.floodfire_storage.check_list(news['url_md5']) == 0):
+            if(self.floodfire_storage.check_list(news['url_md5']) == 0 and news['category'] in filter):
                 self.floodfire_storage.insert_list(news)
                 consecutive = 0
             else:
@@ -122,7 +124,7 @@ class EttListCrawler(BaseListCrawler):
             news_list = self.fetch_list2(soup)
             #print(news_list)
             for news in news_list:
-                if(self.floodfire_storage.check_list(news['url_md5']) == 0):
+                if(self.floodfire_storage.check_list(news['url_md5']) == 0 and news['category'] in filter):
                     self.floodfire_storage.insert_list(news)
                     consecutive = 0
                 else:
@@ -132,16 +134,3 @@ class EttListCrawler(BaseListCrawler):
 
     def run(self):
         self.make_a_round()
-        """
-        news_list = self.fetch_list(soup)
-        print(news_list)
-        for news in news_list:
-            if(self.floodfire_storage.check_list(news['url_md5']) == 0):
-                self.floodfire_storage.insert_list(news)
-            else:
-                print(news['title']+' exist! skip insert.')
-            
-        last_page = self.get_last(soup)
-        print(last_page)
-        """
-        
