@@ -145,6 +145,8 @@ class ApdPageCrawler(BasePageCrawler):
         start_msg = 'Start crawling ' + str(len(crawl_list)) + ' ' + self.code_name + '-news lists.'
         if page_raw:
             start_msg += ' --with save RAW'
+        if page_visual:
+            start_msg += ' --with save VISUAL_LINK'
         self.logme.info(start_msg)
         # 本次的爬抓計數
         crawl_count = 0
