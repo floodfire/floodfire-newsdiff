@@ -132,6 +132,17 @@ class CntPageCrawler(BasePageCrawler):
             authors.append(author_split[0])
         return authors
 
+    def compress_html(self, page_html):
+        """
+        壓縮原始的 HTML
+
+        Keyword arguments:
+            page_html (string) -- 原始 html
+        """
+        # minhtml = re.sub('>\s*<', '><', page_html, 0, re.M)
+        minhtml = htmlmin.minify(page_html, remove_empty_space=True)
+        return minhtml
+
     def run(self, page_raw=False, page_diff=False, page_visual=False):
         """
         程式進入點
