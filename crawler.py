@@ -36,7 +36,7 @@ class Crawler():
         """
         if self.args.typeof == 'list':
             llc = LtnListCrawler(self.config)
-            llc.url = 'http://news.ltn.com.tw/list/breakingnews'
+            llc.url = 'https://news.ltn.com.tw/list/breakingnews'
             llc.run()
 
         elif self.args.typeof == 'page':

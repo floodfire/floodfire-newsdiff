@@ -48,7 +48,12 @@ class LtnListCrawler(BaseListCrawler):
         news_rows = soup.find('ul', 'imm').find_all('li')
         #md5hash = md5()
         for news_row in news_rows:
+            # if news_row.has_attr('id'):
+            #     print('AD')
             link_a = news_row.find('a', class_='tit')
+            # 20190111 自由時報加入廣告欄位，廣告內容無 a tag
+            if link_a is None:
+                continue
             md5hash = md5(link_a['href'].encode('utf-8')).hexdigest()
             raw = {
                 'title': link_a.p.text.strip(),
