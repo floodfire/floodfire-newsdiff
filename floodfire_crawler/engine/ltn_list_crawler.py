@@ -4,6 +4,7 @@ import requests
 from bs4 import BeautifulSoup
 from hashlib import md5
 from time import sleep
+from urllib.parse import urljoin
 from floodfire_crawler.core.base_list_crawler import BaseListCrawler
 from floodfire_crawler.storage.rdb_storage import FloodfireStorage
 
@@ -57,7 +58,7 @@ class LtnListCrawler(BaseListCrawler):
             md5hash = md5(link_a['href'].encode('utf-8')).hexdigest()
             raw = {
                 'title': link_a.p.text.strip(),
-                'url': link_a['href'],
+                'url': urljoin(self._url, link_a['href']),
                 'url_md5': md5hash,
                 'source_id': 5,
                 'category': self.get_category(news_row)
