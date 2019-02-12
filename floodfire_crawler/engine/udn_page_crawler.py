@@ -214,7 +214,6 @@ class UdnPageCrawler(BasePageCrawler):
                     news_page['url_md5'] = row['url_md5']
                     news_page['redirected_url'] = html_content['redirected_url']
                     news_page['source_id'] = source_id
-                    print(news_page)
                     if self.floodfire_storage.insert_page(news_page):
                         # 更新爬抓次數記錄
                         self.floodfire_storage.update_list_crawlercount(row['url_md5'])
