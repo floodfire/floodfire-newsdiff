@@ -86,8 +86,11 @@ class UdnPageCrawler(BasePageCrawler):
         author_sub2 = '' if soup.find('div',{'class', 'shareBar__info--author'}) == None \
                 or soup.find('div',{'class', 'shareBar__info--author'}).span == None \
             else str(soup.find('div', {'class', 'shareBar__info--author'}).span.next_sibling)
-        author = author_sub+author_sub2
-        page['authors'] = author
+        page['authors'] = []
+        if author_sub != '':
+            page['authors'].append(author_sub)
+        if author_sub2 != '':
+            page['authors'].append(author_sub2)
         
         # --- 取出圖片數 ---
         img_raws = soup.select('figure img')
@@ -173,6 +176,7 @@ class UdnPageCrawler(BasePageCrawler):
 
                     soup = BeautifulSoup(html_content['html'], 'html.parser')
                     news_page = self.fetch_news_content(soup)
+                    
                     #miss while redirect
                     publish_time = news_page['publish_time']
                     #if there is redirection
@@ -210,6 +214,7 @@ class UdnPageCrawler(BasePageCrawler):
                     news_page['url_md5'] = row['url_md5']
                     news_page['redirected_url'] = html_content['redirected_url']
                     news_page['source_id'] = source_id
+                    print(news_page)
                     if self.floodfire_storage.insert_page(news_page):
                         # 更新爬抓次數記錄
                         self.floodfire_storage.update_list_crawlercount(row['url_md5'])
