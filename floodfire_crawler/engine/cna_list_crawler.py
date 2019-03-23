@@ -66,51 +66,15 @@ class CnaListCrawler(BaseListCrawler):
         return news
 
     def make_a_round(self):
-        consecutive = 0
-        sleep_time =0
-#        start_page = 1
-#        page = 1
-        while(1):
-            if sleep_time >10:
-                print('Sleep over 10 times, stop!')
-                break
-#            if consecutive > 5:
-#                print('News consecutive more than 20, sleep 5 min')
-#                sleep_time +=1
-#                sleep(5)
-            """
-            page_url = self.url + '/realtime/' + str(page)
-            print(page_url)
-            """
-#            sleep(2)
-#            html = self.fetch_html(page_url)
-            html = self.fetch_html(self.url)
-            soup = BeautifulSoup(html, 'html.parser')
-            
-            if(soup.contents[0]!='html'):
-                break
-            
-            
-            news_list = self.fetch_list(soup)
-            #print(news_list)
-            for news in news_list:
-
-                if consecutive > 5:
-                    print('News consecutive more than 20, sleep 5 min')
-                    consecutive = 0
-                    sleep_time +=1
-                    sleep(300)
-                    break 
-                if(self.floodfire_storage.check_list(news['url_md5']) == 0):
-                    self.floodfire_storage.insert_list(news)
-                    consecutive = 0
-                else:
-                    print(news['title']+' exist! skip insert.')
-                    consecutive += 1
-#            print('one page done !sleep 5 min!')
-            sleep_time +=1
-            sleep(300)
-#            page += 1
+        html = self.fetch_html(self.url)
+        soup = BeautifulSoup(html, 'html.parser')  
+        news_list = self.fetch_list(soup)
+        for news in news_list:
+            if(self.floodfire_storage.check_list(news['url_md5']) == 0):
+                self.floodfire_storage.insert_list(news)
+            else:
+                print(news['title']+' exist! skip insert.')
+        print('one page done !')
 
 
     def run(self):
