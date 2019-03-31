@@ -29,12 +29,6 @@ class CnaListCrawler(BaseListCrawler):
         return html
 
 
-        if req.status_code == requests.codes.ok:
-            html = req.text
-        return html
-
-    def get_last(self):
-        return null
 	
 	
     def fetch_list(self, soup):
@@ -78,8 +72,6 @@ class CnaListCrawler(BaseListCrawler):
 
 
     def run(self):
-        html = self.fetch_html(self.url)
-        soup = BeautifulSoup(html, 'html.parser')
         self.make_a_round()
         """
         news_list = self.fetch_list(soup)

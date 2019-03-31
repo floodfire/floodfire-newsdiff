@@ -97,9 +97,9 @@ class Crawler():
         中央社執行區間
         """
         if self.args.typeof == 'list':
-            elc = CnaListCrawler(self.config)
-            elc.url = 'https://www.cna.com.tw/list/aall.aspx'
-            elc.run()
+            clc = CnaListCrawler(self.config)
+            clc.url = 'https://www.cna.com.tw/list/aall.aspx'
+            clc.run()
         elif self.args.typeof == 'page':
             print('To Be Continue')
     
@@ -119,6 +119,7 @@ class Crawler():
         
         if self.args.media == 'ett':
             self.__ett()
+
         if self.args.media == 'cna':
             self.__cna()
 
