@@ -15,6 +15,7 @@ from floodfire_crawler.engine.ett_page_crawler import EttPageCrawler
 from floodfire_crawler.engine.udn_page_crawler import UdnPageCrawler
 from floodfire_crawler.engine.cnt_list_crawler import CntListCrawler
 from floodfire_crawler.engine.cnt_page_crawler import CntPageCrawler
+from floodfire_crawler.engine.cna_list_crawler import CnaListCrawler
 
 class Crawler():
     def __init__(self, args):
@@ -91,6 +92,17 @@ class Crawler():
             epc = EttPageCrawler(self.config, self.logme)
             epc.run(self.args.raw, self.args.diff, self.args.visual)
 
+    def __cna(self):
+        """
+        中央社執行區間
+        """
+        if self.args.typeof == 'list':
+            clc = CnaListCrawler(self.config)
+            clc.url = 'https://www.cna.com.tw/list/aall.aspx'
+            clc.run()
+        elif self.args.typeof == 'page':
+            print('To Be Continue')
+    
     def main(self):
  
         if self.args.media == 'ltn':
@@ -107,6 +119,9 @@ class Crawler():
         
         if self.args.media == 'ett':
             self.__ett()
+
+        if self.args.media == 'cna':
+            self.__cna()
 
 if __name__ == '__main__':
     parser = ArgumentParser(description="水火新聞爬蟲")
