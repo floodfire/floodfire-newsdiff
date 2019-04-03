@@ -8,7 +8,7 @@ from urllib.parse import urljoin
 from floodfire_crawler.core.base_list_crawler import BaseListCrawler
 from floodfire_crawler.storage.rdb_storage import FloodfireStorage
 
-class LtnListCrawler(BaseListCrawler):
+class CntListCrawler(BaseListCrawler):
 
     @property
     def url(self):
@@ -46,44 +46,40 @@ class LtnListCrawler(BaseListCrawler):
         傳回 HTML 中所有的新聞 List
         """
         news = []
-        news_rows = soup.find('ul', 'imm').find_all('li')
-        #md5hash = md5()
+        news_rows = soup.find('article').find('div', class_='listRight').find_all('li', class_='clear-fix')
         for news_row in news_rows:
-            # if news_row.has_attr('id'):
-            #     print('AD')
-            link_a = news_row.find('a', class_='tit')
-            # 20190111 自由時報加入廣告欄位，廣告內容無 a tag
-            if link_a is None:
-                continue
-            md5hash = md5(link_a['href'].encode('utf-8')).hexdigest()
+            link_title = news_row.find('h2')
+            link_a = link_title.find('a')
+            link_url = urljoin(self.url, link_a['href'])
+            md5hash = md5(link_url.encode('utf-8')).hexdigest()
             raw = {
-                'title': link_a.p.text.strip(),
-                'url': urljoin(self._url, link_a['href']),
+                'title': link_title.text.strip(),
+                'url': link_url,
                 'url_md5': md5hash,
-                'source_id': 5,
+                'source_id': 2,
                 'category': self.get_category(news_row)
             }
             news.append(raw)
         return news
-
-    def get_last(self, soup):
-        """
-        取得頁面中的最後一頁
-        """
-        last_a_tag = soup.find('div', class_='pagination').find('a', class_='p_last')
-        href_uri = last_a_tag['href']
-        last_page = href_uri.rsplit('/', 1)[-1]
-        return int(last_page)
-
+    
     def get_category(self, news_row):
         """
         取得新聞分類
         """
         cate_list = []
-        categories = news_row.find('div', class_='tagarea').find_all('a')
+        categories = news_row.find('div', class_='kindOf').find_all('a')
         for category in categories:
-            cate_list.append(category.text)
+            cate_list.append(category.text.strip())
         return ','.join(cate_list)
+
+    def get_last(self, soup):
+        """
+        取得頁面中的最後一頁
+        """
+        pagination_a_tag = soup.find('div', class_='pagination').find_all('a')
+        href_uri = pagination_a_tag[-1]['href']
+        last_page = href_uri.rsplit('=', 1)[-1]
+        return int(last_page)
 
     def make_a_round(self, start_page, end_page):
         """
@@ -94,14 +90,15 @@ class LtnListCrawler(BaseListCrawler):
         """
         consecutive = 0
         for page in range(start_page, end_page+1):
+            # 如果連續超過 20 組就停止
             if consecutive > 20:
-                print('News consecutive more than 20, stop crawler!!')
-                break
-            page_url = self.url + '/all/' + str(page)
+                    print('News consecutive more than 20, stop crawler!!')
+                    break
+            page_url = self.url + '?page=' + str(page)
             print(page_url)
             sleep(2)
-            status_code, html_content = self.fetch_html(page_url)
 
+            status_code, html_content = self.fetch_html(page_url)
             if status_code == requests.codes.ok:
                 soup = BeautifulSoup(html_content, 'html.parser')
                 news_list = self.fetch_list(soup)
@@ -114,11 +111,13 @@ class LtnListCrawler(BaseListCrawler):
                         print(news['title']+' exist! skip insert.')
                         consecutive += 1
 
-
     def run(self):
+        """
+        程式執行點
+        """
         status_code, html_content = self.fetch_html(self.url)
         if status_code == requests.codes.ok:
             soup = BeautifulSoup(html_content, 'html.parser')
+            # print(self.fetch_list(soup))
             last_page = self.get_last(soup)
             self.make_a_round(1, last_page)
-        

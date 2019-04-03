@@ -30,8 +30,8 @@ class BaseListCrawler(metaclass=ABCMeta):
         return NotImplemented
 
     @abstractmethod
-    def get_last(self):
+    def run(self):
         """
-        傳回 List 的總頁數
+        程式執行點
         """
         return NotImplemented
