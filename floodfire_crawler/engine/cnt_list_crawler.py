@@ -46,9 +46,11 @@ class CntListCrawler(BaseListCrawler):
         傳回 HTML 中所有的新聞 List
         """
         news = []
-        news_rows = soup.find('article').find('div', class_='listRight').find_all('li', class_='clear-fix')
+        news_rows = soup.find('section', class_='article-list').find_all('li')
         for news_row in news_rows:
-            link_title = news_row.find('h2')
+            link_title = news_row.find('h3')
+            if(news_row.find('h3') is None):
+                continue
             link_a = link_title.find('a')
             link_url = urljoin(self.url, link_a['href'])
             md5hash = md5(link_url.encode('utf-8')).hexdigest()
@@ -67,19 +69,10 @@ class CntListCrawler(BaseListCrawler):
         取得新聞分類
         """
         cate_list = []
-        categories = news_row.find('div', class_='kindOf').find_all('a')
+        categories = news_row.find('div', class_='category').find_all('a')
         for category in categories:
             cate_list.append(category.text.strip())
         return ','.join(cate_list)
-
-    def get_last(self, soup):
-        """
-        取得頁面中的最後一頁
-        """
-        pagination_a_tag = soup.find('div', class_='pagination').find_all('a')
-        href_uri = pagination_a_tag[-1]['href']
-        last_page = href_uri.rsplit('=', 1)[-1]
-        return int(last_page)
 
     def make_a_round(self, start_page, end_page):
         """
@@ -119,5 +112,5 @@ class CntListCrawler(BaseListCrawler):
         if status_code == requests.codes.ok:
             soup = BeautifulSoup(html_content, 'html.parser')
             # print(self.fetch_list(soup))
-            last_page = self.get_last(soup)
+            last_page = 10
             self.make_a_round(1, last_page)

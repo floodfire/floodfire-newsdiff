@@ -55,7 +55,7 @@ class LtnPageCrawler(BasePageCrawler):
         page['title'] = article.h1.text.strip()
         article_content = soup.find('div', itemprop='articleBody')
         p_tags = article_content.find_all('p',recursive=False)
-        page['body'] = "\n".join([p.text for p in p_tags])
+        page['body'] = "\n".join([p.text for p in p_tags if len(p.text) > 0])
         page['publish_time'] = article_content.find('span', class_='viewtime').text + ':00'
         
         # 英文新聞中沒有關鍵字區塊
@@ -96,7 +96,7 @@ class LtnPageCrawler(BasePageCrawler):
         article = soup.find('div', itemprop='articleBody')
         page['title'] = article.h1.text.strip()
         p_tags = article.find_all('p',recursive=False)
-        page['body'] = "\n".join([p.text for p in p_tags])
+        page['body'] = "\n".join([p.text for p in p_tags if len(p.text) > 0])
         time_string = soup.find('meta', attrs={'name':'pubdate'})
         page['publish_time'] = strftime('%Y-%m-%d %H:%M:%S', strptime(time_string['content'][:-6], '%Y-%m-%dT%H:%M:%S'))
 
@@ -137,7 +137,7 @@ class LtnPageCrawler(BasePageCrawler):
         page['title'] = article.h1.text.strip()
         article_content = article.find('div', class_='text')
         p_tags = article_content.find_all('p',recursive=False)
-        page['body'] = "\n".join([p.text for p in p_tags])
+        page['body'] = "\n".join([p.text for p in p_tags if len(p.text) > 0])
         page['publish_time'] = article.find('span', class_='time').text + ':00'
 
         # --- 取出關鍵字 ---
@@ -179,7 +179,7 @@ class LtnPageCrawler(BasePageCrawler):
         page['title'] = article.h1.text.strip()
         article_content = article.find('div', itemprop='articleBody')
         p_tags = article_content.find_all('p',recursive=False)
-        page['body'] = "\n".join([p.text for p in p_tags])
+        page['body'] = "\n".join([p.text for p in p_tags if len(p.text) > 0])
         page['publish_time'] = article.find('div', class_='c_time').text + ':00'
 
         # --- 取出關鍵字 ---
@@ -221,7 +221,7 @@ class LtnPageCrawler(BasePageCrawler):
         page['title'] = article.h1.text.strip()
         article_content = article.find('div', itemprop='articleBody')
         p_tags = article_content.find_all('p',recursive=False)
-        page['body'] = "\n".join([p.text for p in p_tags])
+        page['body'] = "\n".join([p.text for p in p_tags if len(p.text) > 0])
         
         # 有無作者資訊會影響出現的時間區段
         if article.find('div', class_='mobile_none'):
@@ -271,7 +271,7 @@ class LtnPageCrawler(BasePageCrawler):
         page['title'] = article_title.h2.text.strip()
         article_content = soup.find('article').find('div', itemprop='articleBody')
         p_tags = article_content.find_all('p',recursive=False)
-        page['body'] = "\n".join([p.text for p in p_tags])
+        page['body'] = "\n".join([p.text for p in p_tags if len(p.text) > 0])
         
         time_string = article_title.find('div', class_='label-date').text
         page['publish_time'] = strftime('%Y-%m-%d %H:%M:%S', strptime(time_string, '%b. %d %Y %H:%M:%S'))
@@ -317,7 +317,7 @@ class LtnPageCrawler(BasePageCrawler):
         page['title'] = article.h1.text.strip()
         article_content = article.find('div', itemprop='articleBody')
         p_tags = article_content.find_all('p',recursive=False)
-        page['body'] = "\n".join([p.text for p in p_tags])
+        page['body'] = "\n".join([p.text for p in p_tags if len(p.text) > 0])
         page['publish_time'] =  article.find('div', class_='writer').select('span')[1].text + ':00'
         
         # --- 取出關鍵字 ---
@@ -361,7 +361,7 @@ class LtnPageCrawler(BasePageCrawler):
         page['title'] = article.h1.find('div', class_='boxText').text.strip()
         article_content = article.find('div', class_='text')
         p_tags = article_content.find_all('p',recursive=False)
-        page['body'] = "\n".join([p.text for p in p_tags])
+        page['body'] = "\n".join([p.text for p in p_tags if len(p.text) > 0])
         page['publish_time'] = article_content.find('span', class_='date1').text
         return page
 
@@ -374,7 +374,7 @@ class LtnPageCrawler(BasePageCrawler):
         page['title'] = article_title.text.strip()
         article_content = soup.find('div', itemprop='articleBody')
         p_tags = article_content.find_all('p',recursive=False)
-        page['body'] = "\n".join([p.text for p in p_tags])
+        page['body'] = "\n".join([p.text for p in p_tags if len(p.text) > 0])
         page['publish_time'] = article_content.find('span', class_='h1dt').text + ':00'
 
         # --- 取出關鍵字 ---
@@ -418,7 +418,7 @@ class LtnPageCrawler(BasePageCrawler):
         page['title'] = article_title.h1.text.strip()
         article_content = soup.find('div', itemprop='articleBody').find('div', class_='text')
         p_tags = article_content.find_all('p',recursive=False)
-        page['body'] = "\n".join([p.text.strip() for p in p_tags])
+        page['body'] = "\n".join([p.text.strip() for p in p_tags if len(p.text) > 0])
         time_string = soup.find('meta', property='article:published_time')
         page['publish_time'] = strftime('%Y-%m-%d %H:%M:%S', strptime(time_string['content'][:-7], '%Y-%m-%dT%H:%M:%S'))
         
@@ -465,7 +465,7 @@ class LtnPageCrawler(BasePageCrawler):
         page['title'] = article.h1.text.strip()
         article_content = soup.find('div', itemprop='articleBody')
         p_tags = article_content.find_all('p',recursive=False)
-        page['body'] = "\n".join([p.text for p in p_tags])
+        page['body'] = "\n".join([p.text for p in p_tags if len(p.text) > 0])
         page['publish_time'] = article_content.find_all('span')[0].text + ':00'
 
         # --- 取出關鍵字 ---
