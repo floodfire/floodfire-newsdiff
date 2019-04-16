@@ -73,7 +73,7 @@ class ApdPageCrawler(BasePageCrawler):
         #authors
         brackets = re.findall('(?:（|\()(.*?)(?:）|\))', news_content)
         split_publishers = re.findall("\w+",(', '.join([bracket for bracket in brackets if bracket.find("報導") > 0])))
-        publishers = list(set([x for x in split_publishers if len(re.findall("報導",x))==0]))
+        publishers = list(sorted(set([x for x in split_publishers if len(re.findall("報導",x))==0])))
         page['authors'] = publishers
         
         # --- 取出圖片數 ---

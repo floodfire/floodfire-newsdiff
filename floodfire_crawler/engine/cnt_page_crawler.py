@@ -54,54 +54,42 @@ class CntPageCrawler(BasePageCrawler):
         """
         page = dict()
         # --- 取出標題 ---
-        page['title'] = soup.select('div#bigpicbox h1#h1')[0].text.strip()
+        page['title'] = soup.find('h1').text.strip()
         # --- 取出內文 ---
-        article_content = soup.select('article.arttext')[0]
-        p_tags = article_content.find_all('p')
-        page['body'] = "\n".join([p.text for p in p_tags])
+        article_content = soup.find('div', {'class', 'article-body'}).find_all('p')
+        page['body'] = "\n".join([x.text for x in article_content if x.text!=''])
 
         # --- 取出發布時間 ---
-        page['publish_time'] = self.fetch_publish_time(article_content)
+        page['publish_time'] = self.fetch_publish_time(soup)
         
         # --- 取出記者 ---
-        page['authors'] = self.extract_author(article_content)
+        page['authors'] = self.extract_author(soup)
         
         # --- 取出關鍵字 ---
-        keywords = soup.find('meta', attrs={'name':'news_keywords'})
-        page['keywords'] = keywords['content'].strip().split(',')
+        keywords = soup.find_all('span', attrs={'class':'hash-tag'})
+        page['keywords'] = [x.a.text for x in keywords]
 
         # -- 取出視覺資料連結（圖片） ---
+        figures = soup.select('figure')
         page['visual_contents'] = list()
-        if soup.find('div', class_='picbox1'):
-            cover_img=soup.find('div', class_='picbox1')
-            page['visual_contents'].append(
-                {
-                    'type': 1,
-                    'visual_src': 'https:' + cover_img.find('img')['src'],
-                    'caption': cover_img.find('a')['title']
-                })
-        imgs = article_content.find_all('div', class_='picbox')
+        imgs = [figure for figure in figures if figure.img is not None]
         for img in imgs:
             page['visual_contents'].append(
-                {
-                    'type': 1,
-                    'visual_src': 'https:' + img.find('img')['src'],
-                    'caption': img.find('span').text.strip()
-                })
+            {
+                'type': 1,
+                'visual_src': 'https:' + img.img['src'],
+                'caption': img.figcaption.text
+            })
 
         # -- 取出視覺資料連結（影片） ---
-        if soup.find('div', class_='video'):
-            video = soup.find('div', class_='video')
-            script_tags = video.parent.find_all('script')
-            for jscript in script_tags:
-                yid = self.regex_pattern.findall(jscript.text)
-                if yid:
-                    page['visual_contents'].append(
-                        {
-                            'type': 2,
-                            'visual_src': 'https://www.youtube.com/embed/' + yid[0],
-                            'caption': video.find('figcaption').text.strip()
-                        })
+        videos = [figure for figure in figures if figure.img is None]
+        for video in videos:
+            page['visual_contents'].append(
+            {
+                'type': 2,
+                'visual_src': video.div['data-href'],
+                'caption': video.figcaption.text
+            })
         
         return page
 
@@ -112,24 +100,21 @@ class CntPageCrawler(BasePageCrawler):
         keyward arguments:
             soup (object) -- beautifulsoup object
         """
-        time = soup.find('time').text.strip()
-        news_time = strftime('%Y-%m-%d %H:%M:%S', strptime(time, '%Y年%m月%d日 %H:%M'))
+        time = soup.find('time').find('span', {'class':'date'}).text + ' ' +\
+               soup.find('time').find('span', {'class':'hour'}).text
+        news_time = strftime('%Y-%m-%d %H:%M:%S', strptime(time, '%Y/%m/%d %H:%M'))
         return news_time
 
-    def extract_author(self, content):
+    def extract_author(self, soup):
         """
         取得記者
 
         keyward arguments:
             content (object) -- beautifulsoup object
         """
-        authors = list()
-        if content.find('div', class_='rp_name').find('cite'):
-            author = content.find('div', class_='rp_name').find('cite').text.strip()
-            authors.append(author)
-        else:
-            author_split = content.find('div', class_='rp_name').text.strip().split('/')
-            authors.append(author_split[0])
+        author_list = soup.find('div', {'class':'author'}).find_all('a')
+        authors = [x.text for x in author_list]
+
         return authors
 
     def compress_html(self, page_html):

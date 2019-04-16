@@ -97,8 +97,8 @@ CREATE TABLE `source` (
 
 INSERT INTO `source` (`id`, `code_name`, `media_name`, `note`) VALUES
 (1, 'apd', '蘋果日報', ''),
-(2, '', '中時電子報', ''),
-(3, '', '中央社', ''),
+(2, 'cnt', '中時電子報', ''),
+(3, 'cna', '中央社', ''),
 (4, 'ett', '東森新聞', ''),
 (5, 'ltn', '自由時報', ''),
 (6, '', '新頭穀', ''),
