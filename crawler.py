@@ -16,7 +16,7 @@ from floodfire_crawler.engine.udn_page_crawler import UdnPageCrawler
 from floodfire_crawler.engine.cnt_list_crawler import CntListCrawler
 from floodfire_crawler.engine.cnt_page_crawler import CntPageCrawler
 from floodfire_crawler.engine.cna_list_crawler import CnaListCrawler
-
+from floodfire_crawler.engine.cnt_page_crawler import CnaPageCrawler
 class Crawler():
     def __init__(self, args):
         self.args = args
@@ -101,7 +101,8 @@ class Crawler():
             clc.url = 'https://www.cna.com.tw/list/aall.aspx'
             clc.run()
         elif self.args.typeof == 'page':
-            print('To Be Continue')
+            cpc = CnaPageCrawler(self.config, self.logme)
+            cpc.run(self.args.raw, self.args.diff, self.args.visual)
     
     def main(self):
  
