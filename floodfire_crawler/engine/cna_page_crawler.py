@@ -129,8 +129,46 @@ class CnaPageCrawler(BasePageCrawler):
                 })
 
         # --- 取出影片數 ---
-        #has_video        
-        page['video'] = 0
+        #has_video
+        video_list = soup.find_all('div',{'class':'youtubeBox'})
+        page['video'] = len(video_list)
+        for i in range(len(video_list)):
+            page['visual_contents'].append({
+                'type':2,
+                'visual_src':video_list[i].find('iframe')['data-src'],
+                'caption':video_list[i].find_all('div',{'class':'picinfo'})[0].text
+            })
+
+        outerMedia_list = soup.find_all(lambda tag:tag.name=='div' and tag.get('class')==['outerMedia'])
+
+        for i in range(len(outerMedia_list)):
+            if 'data-href' in str(outerMedia_list[i]):
+                if 'fb-post' in str(outerMedia_list[i]):
+                    page['image'] +=1
+                    url_tag = outerMedia_list[i].find('div',{'class':'fb-post'})
+                    page['visual_contents'].append({
+                        'type':1,
+                        'visual_src':url_tag['data-href'],
+                        'caption':''
+                    })
+                elif 'fb-video' in str(outerMedia_list[i]):
+                    url_tag = outerMedia_list[i].find('div',{'class':'fb-video'})
+                    page['video']+=1
+                    page['visual_contents'].append({
+                        'type':2,
+                        'visual_src':url_tag['data-href'],
+                        'caption':''
+                    })
+            elif 'href' in str(outerMedia_list[i]):
+                url_tag = outerMedia_list[i].find('a', href=True)
+                url = url_tag['href']
+                page['video']+=1
+                page['visual_contents'].append({
+                    'type':2,
+                    'visual_src':url_tag['href'],
+                    'caption':''
+                })
+            
         # -- 取出視覺資料連結（影片） ---
 
         """
@@ -167,8 +205,6 @@ class CnaPageCrawler(BasePageCrawler):
         # crawl_category = ['news', 'ent', 'ec', 'sports']
         source_id = self.floodfire_storage.get_source_id(self.code_name)
         crawl_list = self.floodfire_storage.get_crawllist(source_id)
-#        print(crawl_list)
-#        print('fuck')
         # log 起始訊息
         start_msg = 'Start crawling ' + str(len(crawl_list)) + ' ' + self.code_name + '-news lists.'
         if page_raw:

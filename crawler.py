@@ -16,7 +16,7 @@ from floodfire_crawler.engine.udn_page_crawler import UdnPageCrawler
 from floodfire_crawler.engine.cnt_list_crawler import CntListCrawler
 from floodfire_crawler.engine.cnt_page_crawler import CntPageCrawler
 from floodfire_crawler.engine.cna_list_crawler import CnaListCrawler
-from floodfire_crawler.engine.cnt_page_crawler import CnaPageCrawler
+from floodfire_crawler.engine.cna_page_crawler import CnaPageCrawler
 class Crawler():
     def __init__(self, args):
         self.args = args
