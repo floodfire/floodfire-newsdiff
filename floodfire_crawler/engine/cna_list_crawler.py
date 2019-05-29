@@ -27,9 +27,6 @@ class CnaListCrawler(BaseListCrawler):
         response = requests.get(url, headers=headers, timeout=15)
         html = response.text
         return html
-
-
-	
 	
     def fetch_list(self, soup):
         news_cat_dic = {'aipl':'政治', 'aopl':'國際', 'acn':'兩岸', 'aie':'產經', 'asc':'證券', 'ait':'科技','ahel':'生活', 
@@ -53,23 +50,61 @@ class CnaListCrawler(BaseListCrawler):
                 'title': link_a.h2.text.strip().replace("　"," ").replace("\u200b",""),
                 'url': link_a['href'],
                 'url_md5': md5hash,
-                'source_id': 10,
+                'source_id': 3,
                 'category': category
             }
             news.append(raw)
-        return news
+        return news 
+
+    def fetch_list2(self, response_json):
+        news = []
+        for i in response_json['result']['SimpleItems']:
+            row = { 'title': i['HeadLine'],
+                    'url': i['PageUrl'],
+                    'url_md5': md5(i['PageUrl'].encode('utf-8')).hexdigest(),
+                    'source_id': 3,
+                   'category': i['ClassName']}
+            news.append(row)
+        return news 
 
     def make_a_round(self):
+        consecutive = 0
         html = self.fetch_html(self.url)
         soup = BeautifulSoup(html, 'html.parser')  
         news_list = self.fetch_list(soup)
+        print(len(news_list))
         for news in news_list:
+            if consecutive > 20:
+                print('News consecutive more then 20, stop crawler!!')
+                break
             if(self.floodfire_storage.check_list(news['url_md5']) == 0):
                 self.floodfire_storage.insert_list(news)
             else:
                 print(news['title']+' exist! skip insert.')
-        print('one page done !')
-
+                consecutive += 1
+        print('1 page done !')
+        offset = 1
+        page_temp_url = "https://www.cna.com.tw/cna2018api/api/simplelist/categorycode/aall/pageidx/"
+        while(consecutive<=20):
+            news_list= []
+            offset +=1
+            sleep(2)
+            page_url = page_temp_url+str(offset)+'/'
+#           print(page_url)
+            response = requests.get(page_url).json()
+            news_list = self.fetch_list2(response)
+            print(len(news_list))
+            if len(response['result']['SimpleItems']) == 0:
+                print('no page!')
+                break
+            for news in news_list:
+                if(self.floodfire_storage.check_list(news['url_md5']) == 0):
+                    self.floodfire_storage.insert_list(news)
+                else:
+                    print(news['title']+' exist! skip insert.')
+                    consecutive += 1
+                    print(consecutive)
+            print(str(offset)+' page done !')
 
     def run(self):
         self.make_a_round()
