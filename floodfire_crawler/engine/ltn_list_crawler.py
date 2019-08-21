@@ -61,7 +61,7 @@ class LtnListCrawler(BaseListCrawler):
                 'url': urljoin(self._url, link_a['href']),
                 'url_md5': md5hash,
                 'source_id': 5,
-                'category': self.get_category(news_row)
+                'category': self.get_category(link_a['href'])
             }
             news.append(raw)
         return news
@@ -75,15 +75,19 @@ class LtnListCrawler(BaseListCrawler):
         last_page = href_uri.rsplit('/', 1)[-1]
         return int(last_page)
 
-    def get_category(self, news_row):
+    def get_category(self, url):
         """
         取得新聞分類
         """
-        cate_list = []
-        categories = news_row.find('div', class_='tagarea').find_all('a')
-        for category in categories:
-            cate_list.append(category.text)
-        return ','.join(cate_list)
+        print(url)
+        if(url.split('/')[3]=='news'):
+            type = url.split('/')[4]
+            if(type.isnumeric()):
+                return url.split('/')[2].split('.')[0]
+            else:
+                return url.split('/')[4]
+        else:
+            return url.split('/')[2].split('.')[0]
 
     def make_a_round(self, start_page, end_page):
         """
