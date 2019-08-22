@@ -79,15 +79,10 @@ class LtnListCrawler(BaseListCrawler):
         """
         取得新聞分類
         """
-        print(url)
-        if(url.split('/')[3]=='news'):
-            type = url.split('/')[4]
-            if(type.isnumeric()):
-                return url.split('/')[2].split('.')[0]
-            else:
-                return url.split('/')[4]
-        else:
+        if(url.split('/')[2].split('.')[0] != 'news'):
             return url.split('/')[2].split('.')[0]
+        else:
+            return url.split('/')[4]
 
     def make_a_round(self, start_page, end_page):
         """
