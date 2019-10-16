@@ -48,56 +48,62 @@ class UdnPageCrawler(BasePageCrawler):
         page = {}
 
         # --- 取出標題 ---
-        title = soup.h1.text.replace("　", " ").replace("\u200b","")
+        if soup.find('h1', {'class', 'story_art_title'}) is None:
+            title = soup.h1.text.replace("　", " ").replace("\u200b","")
+        else:
+            title = soup.find('h1', {'class', 'story_art_title'}).text
         page['title'] = title
 
-        # --- 取出內文 ---
-        sub_content = [] if soup.find('div', id = 'story_body_content') == None \
-        else [x.text.strip() for x in soup.find('div', id = 'story_body_content').select('p') \
-            if x.div==None and x.blockquote == None and len(x.text.strip())>0]
-
-        sub_content2 = [] if soup.find('main') == None \
-        else [x.text.strip() for x in soup.find('main').select('p') \
-            if x.div==None and x.blockquote == None and len(x.text.strip())>0]
-
-        content = sub_content + sub_content2 
-
-        page['body'] = ('\n').join(content)
-
         # --- 取出發布時間 ---
-        page['publish_time'] = self.fetch_publish_time(soup)
-        
+        if soup.find('div',{'class', 'story_bady_info_author'}) is not None:
+            if soup.find('div',{'class', 'story_bady_info_author'}).time is not None:
+                page['publish_time'] = soup.find('div',{'class', 'story_bady_info_author'}).time['datetime'] + ' 00:00'
+            else:
+                page['publish_time'] = soup.find('div',{'class', 'story_bady_info_author'}).span.text
+        else:
+            if soup.find('div',{'class', 'shareBar'}) is not None:
+                page['publish_time'] = soup.find('div',{'class', 'shareBar'}).span.text
+            else:
+                page['publish_time'] = soup.find('div', {'class', 'article-info'}).text
+
         # --- 取出關鍵字 ---
         #keywords
-        tags = [] if soup.find('div',{'class','tag'}) == None \
-        else [x.text for x in soup.find('div',{'class','tag'}).select('a')]
-        tags2 = [] if soup.find('p',{'class','tag'}) == None \
-        else [x.text for x in soup.find('p',{'class','tag'}).select('a')]  
-        page['keywords'] = tags + tags2
+        tag_area = soup.find(id='story_tags')
+        if tag_area is not None:
+            page['keywords'] = [x.text for x in soup.find(id='story_tags').find_all('a')]
+        else:
+            if len(soup.find_all('a', {'class', 'tag-name'})) > 0:
+                page['keywords'] = [x.text for x in soup.find_all('a', {'class', 'tag-name'})]
+            else:
+                page['keywords'] = []
         
         # --- 取出記者 ---
         #author
-        author_sub = '' if soup.find('div',{'class', 'story_bady_info_author'}) == None \
-                        or soup.find('div',{'class', 'story_bady_info_author'}).a == None \
-                    else soup.find('div',{'class', 'story_bady_info_author'}).a.text
-        if soup.find('div',{'class', 'story_bady_info_author'}) != None and\
-           author_sub == '':
-            author_sub = str(soup.find('div',{'class', 'story_bady_info_author'}).span.next_sibling).split(' ')[0]
-        author_sub2 = '' if soup.find('div',{'class', 'shareBar__info--author'}) == None \
-                or soup.find('div',{'class', 'shareBar__info--author'}).span == None \
-            else str(soup.find('div', {'class', 'shareBar__info--author'}).span.next_sibling)
-        page['authors'] = []
-        if author_sub != '':
-            page['authors'].append(author_sub)
-        if author_sub2 != '':
-            page['authors'].append(author_sub2)
-        
+        author_list = []
+        author_area = soup.find('div',{'class', 'story_bady_info_author'})
+        if author_area is not None:
+            if author_area.a is not None:
+                author_list.append(author_area.a.text)
+            else:
+                author_list.append(author_area.find(text=True, recursive=False).split(' ')[0])
+        else:
+            if soup.find('div',{'class', 'shareBar__info--author'}) is not None:
+                author_list.append(soup.find('div',{'class', 'shareBar__info--author'}).find(text=True, recursive=False).split(' ')[-1])
+            else:
+                author_list.append(soup.find('a', {'class', 'article-info'}).text.split(' ')[-1])
+
+        page['authors']=author_list
+
         # --- 取出圖片數 ---
-        img_raws = soup.select('figure img')
+        img_raws = soup.select('figure')
         pic_list = list()
         if(len(img_raws)>0):
             for img_raw in img_raws:
-                pic_list.append({'url':img_raw['src'], 'desc':img_raw['alt']})
+                if img_raw.find('div', {'class', 'imgbox'}) is None:
+                    if img_raw.a is not None:
+                        pic_list.append({'url':img_raw.a['href'], 'desc':img_raw.find('figcaption').text})
+                    else:
+                        pic_list.append({'url':img_raw.img['src'], 'desc':img_raw.img['title']})
         page['image'] = len(pic_list)
 
         # -- 取出視覺資料連結（圖片） ---
@@ -110,12 +116,19 @@ class UdnPageCrawler(BasePageCrawler):
                 })
 
         # --- 取出影片數 ---
-        video_raws = soup.find('div', {'class': 'video-container'})
+        video_raws = soup.find_all('div', {'class': 'video-container'})
         video_list = list()
         if(video_raws !=None):
-            for video_raw in video_raws.select('iframe'):
-                video_list.append({'url':video_raw['src'], 'desc':title})
-
+            for video_raw in video_raws:
+                if video_raw.iframe.has_attr('src'):
+                    video_url = video_raw.iframe['src']
+                else:
+                    video_url = None
+                if video_raw.iframe.has_attr('desc'):
+                    video_desc = video_raw.iframe['desc']
+                else:
+                    video_desc = None
+                video_list.append({'url':video_url, 'title':video_desc})
 
         page['video'] = len(video_list)
         
@@ -124,17 +137,30 @@ class UdnPageCrawler(BasePageCrawler):
             page['visual_contents'].append({
                     'type': 2,
                     'visual_src': video['url'],
-                    'caption': video['desc']
+                    'caption': video['title']
                 })
+
+        # --- 取出內文 ---
+        while soup.find('figcaption') != None:
+            soup.figcaption.decompose()
+        while soup.find('figure') != None:
+            soup.figure.decompose()
+        while soup.find('blockquote') != None:
+            soup.blockquote.decompose()
+        # 如果有轉址
+        content_area = soup.find_all('p')
+        if 'window.location.href' in content_area[0].text:
+            page['body'] = content_area[0].text
+        else:
+            contents = [x.text for x in content_area if x.text != '' and x.text!=' ' and x.text!='\n' and x.p is None and x.script is None]
+            if(contents[0][0]==' '):
+                contents[0] = contents[0][1:]
+            page['body'] = ('\n').join(contents)
+
         return page   
-    
+
     def fetch_publish_time(self, soup):
-        time_sub = '' if soup.find('div',{'class', 'story_bady_info_author'}) == None \
-                  else soup.find('div',{'class', 'story_bady_info_author'}).span.text+":00"
-        time_sub2 = '' if soup.find('div',{'class', 'shareBar__info--author'}) == None \
-                  else soup.find('div',{'class', 'shareBar__info--author'}).span.text
-        time = time_sub + time_sub2
-        return(time)
+        pass
     
     def compress_html(self, page_html):
         """
@@ -167,38 +193,35 @@ class UdnPageCrawler(BasePageCrawler):
         for row in crawl_list:
             try:
                 status_code, html_content = self.fetch_html(row['url'])
-                # test related pages
-                # url = 'https://udn.com/news/story/7332/3477556'
-                # status_code, html_content = self.fetch_html(url)
-
+                print(row['url'])
                 if status_code == requests.codes.ok:
                     print('crawling... id: {}'.format(row['id']))
-
+                    if (row['id'] in [703]):
+                        continue
                     soup = BeautifulSoup(html_content['html'], 'html.parser')
                     news_page = self.fetch_news_content(soup)
                     
                     #miss while redirect
                     publish_time = news_page['publish_time']
+
                     #if there is redirection
                     if('window.location.href' in news_page['body']):
-                        print('redirecting... id: {} ...skip'.format(row['id']))
                         self.floodfire_storage.update_list_errorcount(row['url_md5'])
-                        continue
-                        # redirect_url = re.findall('https?://(?:[-\w/.]|(?:%[\da-fA-F]{2}))+', news_page['body'])[0]
-                        # status_code, html_content = self.fetch_html(redirect_url)
-                        # if status_code == requests.codes.ok:
-                        #     print('redirecting... id: {}'.format(row['id']))
-                        #     print(redirect_url)
-                        #     soup = BeautifulSoup(html_content['html'], 'html.parser')
-                        #     news_page = self.fetch_news_content(soup)
-                        #     #put back normal time
-                        #     if(not news_page['publish_time'][0].isdigit()):
-                        #         news_page['publish_time'] = publish_time
-                        #     #update redirected_url
-                        #     html_content['redirected_url'] = redirect_url
-                        # else:
-                        #         # get 網頁失敗的時候更新 error count
-                        #     self.floodfire_storage.update_list_errorcount(row['url_md5'])
+                        redirect_url = re.findall('https?://(?:[-\w/.]|(?:%[\da-fA-F]{2}))+', news_page['body'])[0]
+                        status_code, html_content = self.fetch_html(redirect_url)
+                        if status_code == requests.codes.ok:
+                            print('redirecting... id: {}'.format(row['id']))
+                            print(redirect_url)
+                            soup = BeautifulSoup(html_content['html'], 'html.parser')
+                            news_page = self.fetch_news_content(soup)
+                            #put back normal time
+                            if(not news_page['publish_time'][0].isdigit()):
+                                news_page['publish_time'] = publish_time
+                            #update redirected_url
+                            html_content['redirected_url'] = redirect_url
+                        else:
+                            # get 網頁失敗的時候更新 error count
+                            self.floodfire_storage.update_list_errorcount(row['url_md5'])
 
                     if page_raw:
                         news_page_raw = dict()
