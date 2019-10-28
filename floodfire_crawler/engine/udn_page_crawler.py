@@ -147,6 +147,9 @@ class UdnPageCrawler(BasePageCrawler):
             soup.figure.decompose()
         while soup.find('blockquote') != None:
             soup.blockquote.decompose()
+        # 去除廣告
+        while soup.find("div", "modal") !=None:
+            soup.find("div", "modal").decompose()
         # 如果有轉址
         content_area = soup.find_all('p')
         if 'window.location.href' in content_area[0].text:
@@ -222,6 +225,12 @@ class UdnPageCrawler(BasePageCrawler):
                         else:
                             # get 網頁失敗的時候更新 error count
                             self.floodfire_storage.update_list_errorcount(row['url_md5'])
+
+                    # 特例：台灣醒報
+                    if (news_page['authors'][0] == '台灣醒報'):
+                        self.floodfire_storage.update_list_errorcount(row['url_md5'])
+                        sleep(randint(2, 6))
+                        continue
 
                     if page_raw:
                         news_page_raw = dict()
