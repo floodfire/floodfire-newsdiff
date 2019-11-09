@@ -51,40 +51,25 @@ class LtnPageCrawler(BasePageCrawler):
         取出 news 類別需要的資料內容
         """
         page = dict()
-        article = soup.find('div', class_='whitecon articlebody')
-        page['title'] = article.h1.text.strip()
-        article_content = soup.find('div', itemprop='articleBody')
-        p_tags = article_content.find_all('p',recursive=False)
-        page['body'] = "\n".join([p.text for p in p_tags if len(p.text) > 0])
-        page['publish_time'] = article_content.find('span', class_='viewtime').text + ':00'
-        
-        # 英文新聞中沒有關鍵字區塊
-        page['keywords'] = list()
-        if article.find('div', class_='keyword boxTitle'):
-            keywords = article.find('div', class_='keyword boxTitle').find_all('a')
-            for keyword in keywords:
-                page['keywords'].append(keyword.text.strip())
-        elif soup.find('meta', attr={'name':'keywords'}):
-            # 2018-11-18 自由時報全類別改版移除關鍵字區塊，改由 Meta 取得
-            meta_keywords = soup.find('meta', attr={'name':'keywords'})
-            keywords = meta_keywords['content'].split(',')
-            for keyword in keywords:
-                page['keywords'].append(keyword.strip())
-
-        # -- 取出記者 ---
+        page['title'] = soup.h1.text.strip()
+        article_content = [x.text for x in soup.find('div', class_='text').find_all('p', recursive = False) if x.text!='' and x.text.find('\u3000\n')<0 and x.text.find('往下閱讀')<0]
+        page['body'] = "\n".join(article_content)
+        page['publish_time'] = re.sub(r'\n[ ]+', '', soup.find('span', class_='time').text+ ':00')
+        page['keywords'] = soup.find('meta', {'name' : 'keywords'})['content'].split(',')
         page['authors'] = self.extract_author(page['body'])
 
         # -- 取出視覺資料連結（圖片） ---
         page['visual_contents'] = list()
 
-        imgs = article_content.find_all('img')
+        imgs = soup.find('div', class_='text').find_all('img')
         for img in imgs:
-            page['visual_contents'].append(
-                {
-                    'type': 1,
-                    'visual_src': img['src'],
-                    'caption': img['title']
-                })
+            if(img['src'].find('http')>-1):
+                page['visual_contents'].append(
+                    {
+                        'type': 1,
+                        'visual_src': img['src'],
+                        'caption': img['title']
+                    })
         
         return page
 
@@ -135,33 +120,24 @@ class LtnPageCrawler(BasePageCrawler):
         page = dict()
         article = soup.find('div', class_='whitecon boxTitle')
         page['title'] = article.h1.text.strip()
-        article_content = article.find('div', class_='text')
-        p_tags = article_content.find_all('p',recursive=False)
-        page['body'] = "\n".join([p.text for p in p_tags if len(p.text) > 0])
+        page['body'] = "\n".join([x.text for x in soup.find_all('p') if x.text != '' and x.text!='爆' and x.text.find('\u3000\n')<0 and x.text.find('加入自由電子')<0])
         page['publish_time'] = article.find('span', class_='time').text + ':00'
 
         # --- 取出關鍵字 ---
-        page['keywords'] = list()
-        if article.find('div', class_='keyword boxTitle'):
-            keywords = article.find('div', class_='keyword boxTitle').find_all('a')
-            for keyword in keywords:
-                page['keywords'].append(keyword.text.strip())
-        elif soup.find('meta', attr={'name':'keywords'}):
-            # 2018-11-18 自由時報全類別改版移除關鍵字區塊，改由 Meta 取得
-            meta_keywords = soup.find('meta', attr={'name':'keywords'})
-            keywords = meta_keywords['content'].split(',')
-            for keyword in keywords:
-                page['keywords'].append(keyword.strip())
+        page['keywords'] = (soup.find('meta', {'name':'keywords'})['content'])
 
         # -- 取出記者 ---
         page['authors'] = self.extract_author(page['body'])
 
         # -- 取出視覺資料連結（圖片） ---
         page['visual_contents'] = list()
-        visuals = article_content.find_all('span', class_='ph_b ph_d1')
+        visuals = soup.find_all('span', class_='ph_b ph_d1')
         for visual in visuals:
             img = visual.find('img')
-            caption = visual.find('span', class_='ph_d').text.strip()
+            if visual.find('span', class_='ph_d') is not None:
+                caption = visual.find('span', class_='ph_d').text.strip()
+            else:
+                caption = ''
             page['visual_contents'].append(
                 {
                     'type': 1,
@@ -270,12 +246,12 @@ class LtnPageCrawler(BasePageCrawler):
         article_title = soup.find('div', class_='caption')
         page['title'] = article_title.h2.text.strip()
         article_content = soup.find('article').find('div', itemprop='articleBody')
-        p_tags = article_content.find_all('p',recursive=False)
-        page['body'] = "\n".join([p.text for p in p_tags if len(p.text) > 0])
-        
+        p_tags = article_content.find_all('p', recursive=False)
+        page['body'] = "\n".join([x.text for x in p_tags if x.text!='' and x.text.find('\u3000\n')<0 and x.text.find('往下閱讀')<0 and x.text.find('延伸閱讀')<0 and x.img == None and 'class' not in x.attrs and 'style' not in x.attrs])
+
         time_string = article_title.find('div', class_='label-date').text
         page['publish_time'] = strftime('%Y-%m-%d %H:%M:%S', strptime(time_string, '%b. %d %Y %H:%M:%S'))
-        
+
         # --- 取出關鍵字 ---
         # 2018-11-13 發現時尚網頁改版，沒有關鍵字區段
         page['keywords'] = list()
@@ -289,17 +265,20 @@ class LtnPageCrawler(BasePageCrawler):
             keywords = meta_keywords['content'].split(',')
             for keyword in keywords:
                 page['keywords'].append(keyword.strip())
-        
+
         # -- 取出記者 ---
         author = article_title.find('p', class_='auther').find('span').text.strip()
         page['authors'] = re.findall(r'文／記者(\w*)', author)
-        
+
         # -- 取出視覺資料連結（圖片） ---
         page['visual_contents'] = list()
         visuals = article_content.find_all('span', class_=['ph_b', 'ph_d1'])
         for visual in visuals:
             img = visual.find('img')
-            caption = visual.find('span', class_='ph_d').text.strip()
+            if (visual.find('span', class_='ph_d') != None):
+                caption = visual.find('span', class_='ph_d').text.strip()
+            else:
+                caption = ''
             page['visual_contents'].append(
                 {
                     'type': 1,
@@ -484,6 +463,37 @@ class LtnPageCrawler(BasePageCrawler):
         # -- 取出記者 ---
         page['authors'] = self.extract_author(page['body'])
         return page
+
+    def __partners_category(self, soup):
+        """
+        取出 partners 類別需要的資料內容
+        """
+        page = dict()
+        #news
+        page['title'] = soup.h1.text.strip()
+        page['publish_time'] = re.sub(r'\|[ ]+', '', soup.find('small').find_all('span')[1].text)
+        page['keywords'] = [x.text for x in soup.find('div', class_='keyword').find_all('a')]
+        page['authors'] = re.compile(r"記者(\w*)").findall(soup.find('small').text)
+
+        # -- 取出視覺資料連結（圖片） ---
+        page['visual_contents'] = list()
+
+        imgs = soup.find_all('div', class_='pic')
+        for img in imgs:
+            page['visual_contents'].append(
+                {
+                    'type': 1,
+                    'visual_src': img.img['src'],
+                    'caption': img.text
+                })
+
+        # --- 取出內文 ---
+        while soup.find('span') != None:
+            soup.find('span').decompose()
+
+        article_content = [x.text for x in soup.find('div', class_='text').find_all('p', recursive = False) if x.text!='' and x.text.find('\u3000\n')<0 and x.text.find('往下閱讀')<0]
+        page['body'] = re.sub(r'[\n]+','\n', "\n".join(article_content))
+        return page
     
     def fetch_news_content(self, category, soup):
         """
@@ -516,6 +526,8 @@ class LtnPageCrawler(BasePageCrawler):
             news_page = self.__playing_category(soup)
         elif category == 'health':
             news_page = self.__health_category(soup)
+        elif category == 'partners':
+            news_page = self.__partners_category(soup)
         return news_page
     
     def extract_type(self, url):

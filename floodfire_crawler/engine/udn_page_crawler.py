@@ -199,12 +199,10 @@ class UdnPageCrawler(BasePageCrawler):
                 print(row['url'])
                 if status_code == requests.codes.ok:
                     print('crawling... id: {}'.format(row['id']))
-                    if (row['id'] in [703]):
-                        continue
                     soup = BeautifulSoup(html_content['html'], 'html.parser')
                     news_page = self.fetch_news_content(soup)
                     
-                    #miss while redirect
+                    #miss while redirect, put back later
                     publish_time = news_page['publish_time']
 
                     #if there is redirection
