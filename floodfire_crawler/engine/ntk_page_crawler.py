@@ -73,10 +73,10 @@ class NtkPageCrawler(BasePageCrawler):
 
         # --- 取出圖片數 ---
         image = soup.findAll('div', class_='news_img clearfix')
-        report['image'] = len(image)
+        page['image'] = len(image)
 
         # -- 取出視覺資料連結（圖片） ---
-        report['visual_contents'] = [{
+        page['visual_contents'] = [{
             'type': 1,
             'visual_src': 'http:' + i.img['src'],
             'caption': i.img['alt']
