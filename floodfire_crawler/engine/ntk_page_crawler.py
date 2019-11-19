@@ -71,45 +71,18 @@ class NtkPageCrawler(BasePageCrawler):
         page['authors'] = soup.find(
             'div', class_='content_reporter').find('a').text
 
-        # # --- 取出圖片數 ---
-        # pic_urls_index = [i for i in range(
-        #     0, len(story)) if story[i].img != None]
-        # pic_list = list()
-        # for i in pic_urls_index:
-        #     if((i-1) >= 0 and story[i-1].text.find('▼') >= 0):
-        #         pic_list.append(
-        #             {'url': "https:"+story[i].img['src'], 'desc': story[i-1].text})
-        #     elif((i+1) < len(story) and story[i+1].text.find('▲') >= 0):
-        #         pic_list.append(
-        #             {'url': "https:"+story[i].img['src'], 'desc': story[i+1].text})
-        #     else:
-        #         pic_list.append(
-        #             {'url': "https:"+story[i].img['src'], 'desc': ""})
+        # --- 取出圖片數 ---
+        image = soup.findAll('div', class_='news_img clearfix')
+        report['image'] = len(image)
 
-        # page['image'] = len(pic_list)
+        # -- 取出視覺資料連結（圖片） ---
+        report['visual_contents'] = [{
+            'type': 1,
+            'visual_src': 'http:' + i.img['src'],
+            'caption': i.img['alt']
+        }for i in image]
 
-        # # -- 取出視覺資料連結（圖片） ---
-        # page['visual_contents'] = list()
-        # for img in pic_list:
-        #     page['visual_contents'].append({
-        #         'type': 1,
-        #         'visual_src': img['url'],
-        #         'caption': img['desc']
-        #     })
-
-        # # --- 取出影片數 ---
-        # video_urls_index = [i for i in range(
-        #     0, len(story)) if story[i].iframe != None]
-        # video_list = list()
-        # for i in video_urls_index:
-        #     if(i-1 >= 0 and story[i-1].text.find('▼') >= 0):
-        #         video_list.append(
-        #             {'url': story[i].iframe['src'], 'desc': story[i-1].text})
-        #     elif(i+1 < len(story) and story[i+1].text.find('▲') >= 0):
-        #         video_list.append(
-        #             {'url': story[i].iframe['src'], 'desc': story[i+1].text})
-        #     else:
-        #         video_list.append({'url': story[i].iframe['src'], 'desc': ""})
+        # --- 取出影片數 ---
 
         # page['video'] = len(video_list)
 
