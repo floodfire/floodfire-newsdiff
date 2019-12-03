@@ -17,6 +17,8 @@ from floodfire_crawler.engine.cnt_list_crawler import CntListCrawler
 from floodfire_crawler.engine.cnt_page_crawler import CntPageCrawler
 from floodfire_crawler.engine.cna_list_crawler import CnaListCrawler
 from floodfire_crawler.engine.cna_page_crawler import CnaPageCrawler
+from floodfire_crawler.engine.ntk_list_crawler import NtkListCrawler
+from floodfire_crawler.engine.ntk_page_crawler import NtkPageCrawler
 
 class Crawler():
     def __init__(self, args):
@@ -104,6 +106,18 @@ class Crawler():
         elif self.args.typeof == 'page':
             cpc = CnaPageCrawler(self.config, self.logme)
             cpc.run(self.args.raw, self.args.diff, self.args.visual)
+    
+    def __ntk(self):
+        """
+        newtalk 執行區間
+        """
+        if self.args.typeof == 'list':
+            ntk = NtkListCrawler(self.config)
+            ntk.url = ''
+            ntk.run()
+        elif self.args.typeof == 'page':
+            ntk = NtkPageCrawler(self.config, self.logme)
+            ntk.run(self.args.raw, self.args.diff, self.args.visual)
     
     def main(self):
  
