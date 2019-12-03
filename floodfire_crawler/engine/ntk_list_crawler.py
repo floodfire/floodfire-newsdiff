@@ -36,16 +36,19 @@ class NtkListCrawler(BaseListCrawler):
         news_rows = soup.find_all("div", {"class": "news-list-item clearfix"})
         #md5hash = md5()
         for news_row in news_rows:
-            link_a = news_row.find("a", class_='newsBox')
-            md5hash = md5(link_a['href'].encode('utf-8')).hexdigest()
-            raw = {
-                'title': news_row.find("div", class_='news_title').text.strip(),
-                'url': link_a['href'],
-                'url_md5': md5hash,
-                'source_id': 6,
-                'category': 'None'
-            }
-            news.append(raw)
+            try:
+                link_a = news_row.find("a", class_='newsBox')
+                md5hash = md5(link_a['href'].encode('utf-8')).hexdigest()
+                raw = {
+                    'title': news_row.find("div", class_='news_title').text.strip(),
+                    'url': link_a['href'],
+                    'url_md5': md5hash,
+                    'source_id': 6,
+                    'category': 'None'
+                }
+                news.append(raw)
+            except:
+                continue
         return news
 
     def make_a_round(self):
