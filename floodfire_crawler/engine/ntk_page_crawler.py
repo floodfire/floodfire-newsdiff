@@ -69,8 +69,7 @@ class NtkPageCrawler(BasePageCrawler):
 
         # --- 取出記者 ---
         # authors
-        page['authors'] = soup.find(
-            'div', class_='content_reporter').find('a').text
+        page['authors'] = [soup.find('div', class_='content_reporter').find('a').text]
 
         # --- 取出圖片數 ---
         image = soup.findAll('div', class_='news_img clearfix')
