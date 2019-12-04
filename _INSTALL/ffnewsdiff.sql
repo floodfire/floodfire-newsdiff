@@ -101,7 +101,7 @@ INSERT INTO `source` (`id`, `code_name`, `media_name`, `note`) VALUES
 (3, 'cna', '中央社', ''),
 (4, 'ett', '東森新聞', ''),
 (5, 'ltn', '自由時報', ''),
-(6, '', '新頭穀', ''),
+(6, 'ntk', '新頭穀', ''),
 (7, '', 'nownews', ''),
 (8, 'udn', '聯合新聞網', ''),
 (9, '', 'TVBS', ''),
