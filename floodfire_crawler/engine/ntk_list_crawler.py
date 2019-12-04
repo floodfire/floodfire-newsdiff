@@ -76,11 +76,11 @@ class NtkListCrawler(BaseListCrawler):
                 consecutive += 1
 
         # next page
-        for date in (today - timedelta(days=x) for x in range(numdays)):
+        for mydate in (today - timedelta(days=x) for x in range(numdays)):
             if consecutive > 20:
                 print('News consecutive more than 20, stop crawler!!')
                 break
-            page_url = "https://newtalk.tw/news/summary/" + date.isoformat()
+            page_url = "https://newtalk.tw/news/summary/" + mydate.isoformat()
             print(page_url)
             sleep(2)
             html = self.fetch_html(page_url)
