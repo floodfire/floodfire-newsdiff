@@ -19,6 +19,8 @@ from floodfire_crawler.engine.cna_list_crawler import CnaListCrawler
 from floodfire_crawler.engine.cna_page_crawler import CnaPageCrawler
 from floodfire_crawler.engine.ntk_list_crawler import NtkListCrawler
 from floodfire_crawler.engine.ntk_page_crawler import NtkPageCrawler
+from floodfire_crawler.engine.now_list_crawler import NowListCrawler
+from floodfire_crawler.engine.now_page_crawler import NowPageCrawler
 
 
 class Crawler():
@@ -120,6 +122,18 @@ class Crawler():
             npc = NtkPageCrawler(self.config, self.logme)
             npc.run(self.args.raw, self.args.diff, self.args.visual)
 
+    def __now(self):
+        """
+        nownews 執行區間
+        """
+        if self.args.typeof == 'list':
+            nlc = NowListCrawler(self.config)
+            nlc.url = 'https://www.nownews.com/wp-json/wp/v2/posts?page=1&per_page=100'
+            nlc.run()
+        elif self.args.typeof == 'page':
+            npc = NowPageCrawler(self.config, self.logme)
+            npc.run(self.args.raw, self.args.diff, self.args.visual)
+
     def main(self):
 
         if self.args.media == 'ltn':
@@ -142,6 +156,9 @@ class Crawler():
 
         if self.args.media == 'ntk':
             self.__ntk()
+
+        if self.args.media == 'now':
+            self.__now()
 
 
 if __name__ == '__main__':
