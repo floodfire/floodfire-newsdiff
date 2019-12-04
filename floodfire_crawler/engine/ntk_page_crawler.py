@@ -64,8 +64,7 @@ class NtkPageCrawler(BasePageCrawler):
 
         # --- 取出關鍵字 ---
         # keywords=
-        page['keywords'] = [a.text for a in soup.find(
-            'div', class_='tag_group2').findAll('a')]
+        page['keywords'] = [a.text for a in soup.find('div', class_='tag_group2').findAll('a')]
 
         # --- 取出記者 ---
         # authors
@@ -84,15 +83,15 @@ class NtkPageCrawler(BasePageCrawler):
 
         # --- 取出影片數 ---
 
-        video = soup.find('div',{"itemprop":'articleBody'}).findAll('p')[-1].find('iframe')
+        video = soup.find('div', {"itemprop": 'articleBody'}).findAll('p')[-1].find('iframe')
         print(video)
         if video:
             page['video'] = 1
             # -- 取出視覺資料連結（影片） ---
             page['visual_contents'] = {
-                        'type': 2,
-                        'visual_src': video['src'],
-                        'caption': None
+                'type': 2,
+                'visual_src': video['src'],
+                'caption': None
             }
         else:
             page['video'] = 0
@@ -100,10 +99,8 @@ class NtkPageCrawler(BasePageCrawler):
         return page
 
     def fetch_publish_time(self, soup):
-        time = soup.find('div', class_='content_date').text.lstrip()[
-            3:].rstrip()
-        news_time = strftime('%Y-%m-%d %H:%M:%S',
-                             strptime(time, '%Y.%m.%d | %H:%M'))
+        time = soup.find('div', class_='content_date').text.lstrip()[3:].rstrip()
+        news_time = strftime('%Y-%m-%d %H:%M:%S', strptime(time, '%Y.%m.%d | %H:%M'))
         return news_time
 
     def compress_html(self, page_html):
@@ -121,7 +118,6 @@ class NtkPageCrawler(BasePageCrawler):
         """
         程式進入點
         """
-        # crawl_category = ['news', 'ent', 'ec', 'sports']
         source_id = self.floodfire_storage.get_source_id(self.code_name)
         crawl_list = self.floodfire_storage.get_crawllist(source_id)
         # log 起始訊息
@@ -174,20 +170,16 @@ class NtkPageCrawler(BasePageCrawler):
                         for vistual_row in news_page['visual_contents']:
                             vistual_row['list_id'] = row['id']
                             vistual_row['url_md5'] = row['url_md5']
-                            self.floodfire_storage.insert_visual_link(
-                                vistual_row)
+                            self.floodfire_storage.insert_visual_link(vistual_row)
 
                     # 隨機睡 2~6 秒再進入下一筆抓取
                     sleep(randint(2, 6))
                 else:
                     # get 網頁失敗的時候更新 error count
-                    self.floodfire_storage.update_list_errorcount(
-                        row['url_md5'])
+                    self.floodfire_storage.update_list_errorcount(row['url_md5'])
             except Exception as e:
-                self.logme.exception(
-                    'error: list-' + str(row['id']) + ' ' + str(e.args))
+                self.logme.exception('error: list-' + str(row['id']) + ' ' + str(e.args))
                 # 更新錯誤次數記錄
                 self.floodfire_storage.update_list_errorcount(row['url_md5'])
                 pass
-        self.logme.info('Crawled ' + str(crawl_count) +
-                        ' ' + self.code_name + '-news lists.')
+        self.logme.info('Crawled ' + str(crawl_count) + ' ' + self.code_name + '-news lists.')
