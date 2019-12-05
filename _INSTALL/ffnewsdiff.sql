@@ -37,7 +37,8 @@ CREATE TABLE `list` (
   `title` text NOT NULL COMMENT '新聞標題',
   `created_at` datetime NOT NULL COMMENT '連結建立時間',
   `crawler_count` tinyint(3) UNSIGNED NOT NULL DEFAULT 0 COMMENT '爬抓次數',
-  `error_count` tinyint(4) NOT NULL DEFAULT 0 COMMENT '發生錯誤次數'
+  `error_count` tinyint(4) NOT NULL DEFAULT 0 COMMENT '發生錯誤次數',
+  `version_count` tinyint(4) NOT NULL DEFAULT 0 COMMENT '不同版本數量'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -60,7 +61,10 @@ CREATE TABLE `page` (
   `image` tinyint(1) NOT NULL DEFAULT 0 COMMENT '有無圖片',
   `video` tinyint(1) NOT NULL DEFAULT 0 COMMENT '有無影片',
   `keywords` varchar(255) DEFAULT NULL COMMENT '新聞關鍵字',
-  `created_at` datetime DEFAULT NULL COMMENT '建立時間'
+  `created_at` datetime DEFAULT NULL COMMENT '建立時間',
+  `version` tinyint(4) NOT NULL DEFAULT 1 COMMENT '第幾個版本',
+  `last_page_id` int(11) DEFAULT NULL COMMENT '前一個版本的page_id',
+  `diff_cols` varchar(255) DEFAULT NULL COMMENT '跟前一個版本的差異欄位'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -127,7 +131,8 @@ CREATE TABLE `visual_link` (
   `url_md5` varchar(32) NOT NULL COMMENT '網址MD5雜湊值',
   `visual_src` varchar(1024) NOT NULL COMMENT '圖像連結位址',
   `caption` varchar(255) DEFAULT NULL COMMENT '圖像標題內容',
-  `created_at` datetime NOT NULL COMMENT '建立時間'
+  `created_at` datetime NOT NULL COMMENT '建立時間',
+  `version` tinyint(4) NOT NULL DEFAULT 1 COMMENT '第幾個版本'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='抽取圖片或是影片網址';
 
 --
