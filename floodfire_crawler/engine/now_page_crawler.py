@@ -64,7 +64,7 @@ class NowPageCrawler(BasePageCrawler):
 
         # --- 取出記者 ---
         # authors
-        page['authors'] = [soup.find('div', class_='td-post-author-name').text.strip('\n').strip(' ')]
+        page['authors'] = [soup.find('div', class_='td-post-author-name').text.strip('\n')[:-2].strip(' ')]
 
         # --- 取出圖片數 ---
         image = soup.find('div', class_='td-post-content').findAll('figure')
