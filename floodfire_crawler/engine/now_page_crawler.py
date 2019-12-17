@@ -70,6 +70,7 @@ class NowPageCrawler(BasePageCrawler):
         image = soup.find('div', class_='td-post-content').findAll('figure')
         page['image'] = len(image)
 
+        page['visual_contents'] = list()
         # -- 取出視覺資料連結（圖片） ---
         page['visual_contents'] = [{
             'type': 1,
@@ -84,11 +85,11 @@ class NowPageCrawler(BasePageCrawler):
         if video:
             page['video'] = 1
             # -- 取出視覺資料連結（影片） ---
-            page['visual_contents'] = {
+            page['visual_contents'].append({
                 'type': 2,
                 'visual_src': video['src'],
                 'caption': None
-            }
+            })
         else:
             page['video'] = 0
 
