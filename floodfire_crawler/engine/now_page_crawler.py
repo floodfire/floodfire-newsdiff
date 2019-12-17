@@ -67,7 +67,7 @@ class NowPageCrawler(BasePageCrawler):
         page['authors'] = [soup.find('div', class_='td-post-author-name').text.strip('\n').strip(' ')]
 
         # --- 取出圖片數 ---
-        image = soup.find('div',class_='td-post-content').findAll('figure')
+        image = soup.find('div', class_='td-post-content').findAll('figure')
         page['image'] = len(image)
 
         # -- 取出視覺資料連結（圖片） ---
@@ -79,18 +79,18 @@ class NowPageCrawler(BasePageCrawler):
 
         # --- 取出影片數 ---
 
-        # video = soup.find('div', {"itemprop": 'articleBody'}).findAll('p')[-1].find('iframe')
-        # print(video)
-        # if video:
-        #     page['video'] = 1
-        #     # -- 取出視覺資料連結（影片） ---
-        #     page['visual_contents'] = {
-        #         'type': 2,
-        #         'visual_src': video['src'],
-        #         'caption': None
-        #     }
-        # else:
-        #     page['video'] = 0
+        video = soup.find('span', {"itemprop": 'articleBody'}).findAll(
+            'p')[-1].noscript.iframe
+        if video:
+            page['video'] = 1
+            # -- 取出視覺資料連結（影片） ---
+            page['visual_contents'] = {
+                'type': 2,
+                'visual_src': video['src'],
+                'caption': None
+            }
+        else:
+            page['video'] = 0
 
         return page
 
