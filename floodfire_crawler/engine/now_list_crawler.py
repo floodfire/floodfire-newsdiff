@@ -39,7 +39,7 @@ class NowListCrawler(BaseListCrawler):
         for row in news_rows:
             try:
                 raw = {
-                    'title': row['title'],
+                    'title': row['title']['rendered'],
                     'url': row['link'],
                     'url_md5': md5(row['link']),
                     'source_id': 7,
@@ -52,7 +52,7 @@ class NowListCrawler(BaseListCrawler):
 
     def make_a_round(self):
         consecutive = 0
-        # i just set a unreachable number of page, but maybe someday it will exceed
+        # just set a unreachable number of page, but maybe someday it will exceed
         for pageNum in range(1, 1000000):
 
             if consecutive > 20:
@@ -60,7 +60,6 @@ class NowListCrawler(BaseListCrawler):
                 break
 
             page_url = "https://www.nownews.com/wp-json/wp/v2/posts?page={pageNum}&per_page=100".format(pageNum=pageNum)
-            print(page_url)
 
             # get json response
             jsonRes = self.fetch_html(page_url)
