@@ -67,14 +67,14 @@ class NowPageCrawler(BasePageCrawler):
         page['authors'] = [soup.find('div', class_='td-post-author-name').text.strip('\n').strip(' ')]
 
         # --- 取出圖片數 ---
-        image = soup.findAll('figure')
+        image = soup.find('div',class_='td-post-content').findAll('figure')
         page['image'] = len(image)
 
         # -- 取出視覺資料連結（圖片） ---
         page['visual_contents'] = [{
             'type': 1,
-            'visual_src': 'http:' + i.img['src'],
-            'caption': i.img['alt']
+            'visual_src': i.img['src'] if i.noscript is None else i.noscript.img['src'],
+            'caption': i.figcaption.text
         }for i in image]
 
         # --- 取出影片數 ---
