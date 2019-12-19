@@ -95,8 +95,6 @@ class NowPageCrawler(BasePageCrawler):
         return page
 
     def fetch_publish_time(self, soup):
-        # time = soup.find('div', class_='content_date').text.lstrip()[3:].rstrip()
-        # news_time = strftime('%Y-%m-%d %H:%M:%S', strptime(time, '%Y.%m.%d | %H:%M'))
         return soup.find('time').text
 
     def compress_html(self, page_html):
