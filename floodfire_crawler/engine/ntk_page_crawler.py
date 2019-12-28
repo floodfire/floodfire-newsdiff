@@ -84,7 +84,6 @@ class NtkPageCrawler(BasePageCrawler):
         # --- 取出影片數 ---
 
         video = soup.find('div', {"itemprop": 'articleBody'}).findAll('p')[-1].find('iframe')
-        print(video)
         if video:
             page['video'] = 1
             # -- 取出視覺資料連結（影片） ---
