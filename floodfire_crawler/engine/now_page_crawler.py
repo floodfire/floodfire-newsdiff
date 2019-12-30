@@ -11,10 +11,10 @@ from floodfire_crawler.core.base_page_crawler import BasePageCrawler
 from floodfire_crawler.storage.rdb_storage import FloodfireStorage
 
 
-class NtkPageCrawler(BasePageCrawler):
+class NowPageCrawler(BasePageCrawler):
 
     def __init__(self, config, logme):
-        self.code_name = "ntk"
+        self.code_name = "now"
         self.floodfire_storage = FloodfireStorage(config)
         self.logme = logme
 
@@ -50,47 +50,44 @@ class NtkPageCrawler(BasePageCrawler):
         page = {}
 
         # --- 取出標題 ---
-        page['title'] = soup.find('h1', class_='content_title').text
+        page['title'] = soup.find('h1', class_='entry-title').text
 
         # --- 取出內文 ---
-        page['body'] = "".join(
-            [p.text
-             for p in soup.find('div', {"itemprop": 'articleBody'}).findAll('p')
-             ]
-        )
+        page['body'] = "\n".join([p.text for p in soup.find('span', {"itemprop": 'articleBody'}).findAll('p')])
 
         # --- 取出發布時間 ---
         page['publish_time'] = self.fetch_publish_time(soup)
 
         # --- 取出關鍵字 ---
         # keywords=
-        page['keywords'] = [a.text for a in soup.find('div', class_='tag_group2').findAll('a')]
+        page['keywords'] = [a.text for a in soup.find('div', class_='td-post-source-tags').findAll('a')]
 
         # --- 取出記者 ---
         # authors
-        page['authors'] = [soup.find('div', class_='content_reporter').find('a').text]
+        page['authors'] = [soup.find('div', class_='td-post-author-name').text.strip('\n')[:-2].strip(' ')]
 
         # --- 取出圖片數 ---
-        image = soup.findAll('div', class_='news_img clearfix')
+        image = soup.find('div', class_='td-post-content').findAll('figure')
         page['image'] = len(image)
 
         page['visual_contents'] = list()
         # -- 取出視覺資料連結（圖片） ---
         page['visual_contents'] = [{
             'type': 1,
-            'visual_src': 'http:' + i.img['src'],
-            'caption': i.img['alt']
-        }for i in image]
+            'visual_src': i.img['src'] if i.noscript is None else i.noscript.img['src'],
+            'caption': i.figcaption.text if i.figcaption is not None else "None"
+        }for i in image if i.img is not None]
 
         # --- 取出影片數 ---
 
-        video = soup.find('div', {"itemprop": 'articleBody'}).findAll('p')[-1].find('iframe')
-        if video:
+        video = soup.find('span', {"itemprop": 'articleBody'}).findAll('p')[-1]
+      
+        if video is not None and video.noscript is not None and video.noscript.iframe is not None:
             page['video'] = 1
             # -- 取出視覺資料連結（影片） ---
             page['visual_contents'].append({
                 'type': 2,
-                'visual_src': video['src'],
+                'visual_src': video.iframe['src'],
                 'caption': None
             })
         else:
@@ -99,9 +96,7 @@ class NtkPageCrawler(BasePageCrawler):
         return page
 
     def fetch_publish_time(self, soup):
-        time = soup.find('div', class_='content_date').text.lstrip()[3:].rstrip()
-        news_time = strftime('%Y-%m-%d %H:%M:%S', strptime(time, '%Y.%m.%d | %H:%M'))
-        return news_time
+        return soup.find('time').text
 
     def compress_html(self, page_html):
         """
