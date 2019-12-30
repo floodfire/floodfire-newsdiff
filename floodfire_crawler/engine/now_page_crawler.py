@@ -87,7 +87,7 @@ class NowPageCrawler(BasePageCrawler):
             # -- 取出視覺資料連結（影片） ---
             page['visual_contents'].append({
                 'type': 2,
-                'visual_src': video['src'],
+                'visual_src': video.iframe['src'],
                 'caption': None
             })
         else:
