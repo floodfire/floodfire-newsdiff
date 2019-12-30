@@ -31,6 +31,7 @@ class NowListCrawler(BaseListCrawler):
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36',
         }
         response = requests.get(url, headers=headers, timeout=15)
+        response.encoding = 'UTF-8'
         return response.json()
 
     def fetch_list(self, jsonRes):
@@ -41,7 +42,7 @@ class NowListCrawler(BaseListCrawler):
                 raw = {
                     'title': row['title']['rendered'],
                     'url': row['link'],
-                    'url_md5': md5(row['link']),
+                    'url_md5': md5(row['link'].encode('utf-8')).hexdigest(),
                     'source_id': 7,
                     'category': 'None'  # 先暫時不寫這欄
                 }
