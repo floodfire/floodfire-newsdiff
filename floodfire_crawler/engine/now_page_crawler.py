@@ -80,8 +80,9 @@ class NowPageCrawler(BasePageCrawler):
 
         # --- 取出影片數 ---
 
-        video = soup.find('span', {"itemprop": 'articleBody'}).findAll('p')[-1].noscript.iframe
-        if video is not None and video.iframe is not None:
+        video = soup.find('span', {"itemprop": 'articleBody'}).findAll('p')[-1]
+      
+        if video is not None and video.noscript is not None and video.noscript.iframe is not None:
             page['video'] = 1
             # -- 取出視覺資料連結（影片） ---
             page['visual_contents'].append({
