@@ -76,7 +76,7 @@ class NowPageCrawler(BasePageCrawler):
             'type': 1,
             'visual_src': i.img['src'] if i.noscript is None else i.noscript.img['src'],
             'caption': i.figcaption.text if i.figcaption is not None else "None"
-        }for i in image]
+        }for i in image if i.img is not None]
 
         # --- 取出影片數 ---
 
