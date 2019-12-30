@@ -96,7 +96,7 @@ class ApdPageCrawler(BasePageCrawler):
         else:
             report['video'] = 0
 
-            return report
+        return report
 
     def fetch_publish_time(self, timeString):
         # timeString e.g 2019-12-24T13:03:18.419Z
