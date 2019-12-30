@@ -3,6 +3,7 @@
 import requests
 import re
 import htmlmin
+import json
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 from time import sleep, strftime, strptime
@@ -161,7 +162,7 @@ class ApdPageCrawler(BasePageCrawler):
                         news_page_raw['list_id'] = row['id']
                         news_page_raw['url'] = row['url']
                         news_page_raw['url_md5'] = row['url_md5']
-                        news_page_raw['page_content'] = html_content['json']
+                        news_page_raw['page_content'] = json.dumps(html_content['json'])
                         self.floodfire_storage.insert_page_raw(news_page_raw)
                         print('Save ' + str(row['id']) + ' page Raw.')
 
@@ -176,7 +177,7 @@ class ApdPageCrawler(BasePageCrawler):
                     news_page['url_md5'] = row['url_md5']
                     news_page['redirected_url'] = html_content['redirected_url']
                     news_page['source_id'] = source_id
-                    
+
                     ######Diff#######
                     if page_diff:
                         last_page, table_name = self.floodfire_storage.get_last_page(news_page['url_md5'],
@@ -187,7 +188,7 @@ class ApdPageCrawler(BasePageCrawler):
                             if diff_col_list is None:
                                 # 有上一筆，但沒有不同，更新爬抓次數，不儲存
                                 print('has last, no diff')
-                                crawl_count += 1 
+                                crawl_count += 1
                                 self.floodfire_storage.update_list_crawlercount(row['url_md5'])
                                 continue
                             else:
@@ -214,7 +215,7 @@ class ApdPageCrawler(BasePageCrawler):
                             vistual_row['list_id'] = row['id']
                             vistual_row['url_md5'] = row['url_md5']
                             self.floodfire_storage.insert_visual_link(vistual_row, version)
-                    
+
                     # 隨機睡 2~6 秒再進入下一筆抓取
                     sleep(randint(2, 6))
                 else:
