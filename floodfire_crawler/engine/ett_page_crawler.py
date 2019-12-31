@@ -169,9 +169,6 @@ class EttPageCrawler(BasePageCrawler):
             diff_obj = FloodfireDiff()
         else:
             diff_obj = None
-        version = 1
-        table_name = None
-        diff_vals = (version, None, None)
         ######Diff#######
         crawl_list = self.floodfire_storage.get_crawllist(source_id, page_diff, diff_obj)
         # log 起始訊息
@@ -207,6 +204,9 @@ class EttPageCrawler(BasePageCrawler):
                     news_page['redirected_url'] = html_content['redirected_url']
                     news_page['source_id'] = source_id
                     ######Diff#######
+                    version = 1
+                    table_name = None
+                    diff_vals = (version, None, None)
                     if page_diff:
                         last_page, table_name = self.floodfire_storage.get_last_page(news_page['url_md5'],
                                                                                      news_page['publish_time'],
