@@ -9,6 +9,7 @@ from time import sleep, strftime, strptime
 from random import randint
 from floodfire_crawler.core.base_page_crawler import BasePageCrawler
 from floodfire_crawler.storage.rdb_storage import FloodfireStorage
+from floodfire_crawler.service.diff import FloodfireDiff
 
 
 class NowPageCrawler(BasePageCrawler):
@@ -79,20 +80,23 @@ class NowPageCrawler(BasePageCrawler):
         }for i in image if i.img is not None]
 
         # --- 取出影片數 ---
-
-        video = soup.find('span', {"itemprop": 'articleBody'}).findAll('p')[-1]
-      
-        if video is not None and video.noscript is not None and video.noscript.iframe is not None:
-            page['video'] = 1
-            # -- 取出視覺資料連結（影片） ---
-            page['visual_contents'].append({
-                'type': 2,
-                'visual_src': video.iframe['src'],
-                'caption': None
-            })
+        if len(soup.find('span', {"itemprop": 'articleBody'}).findAll('p')) > 0:
+            video = soup.find('span', {"itemprop": 'articleBody'}).findAll('p')[-1]      
+            if video is not None and video.noscript is not None and video.noscript.iframe is not None:
+                if video.iframe.has_attr('src') or video.iframe.has_attr('data-src'):
+                    page['video'] = 1
+                    # -- 取出視覺資料連結（影片） ---
+                    page['visual_contents'].append({
+                        'type': 2,
+                        'visual_src': video.iframe['src'] if video.iframe.has_attr('src') else video.iframe['data-src'],
+                        'caption': None
+                    })
+                else:
+                    page['video'] = 0
+            else:
+                page['video'] = 0
         else:
             page['video'] = 0
-
         return page
 
     def fetch_publish_time(self, soup):
@@ -114,7 +118,13 @@ class NowPageCrawler(BasePageCrawler):
         程式進入點
         """
         source_id = self.floodfire_storage.get_source_id(self.code_name)
-        crawl_list = self.floodfire_storage.get_crawllist(source_id)
+        ######Diff#######
+        if page_diff:
+            diff_obj = FloodfireDiff()
+        else:
+            diff_obj = None
+        ######Diff#######
+        crawl_list = self.floodfire_storage.get_crawllist(source_id, page_diff, diff_obj)
         # log 起始訊息
         start_msg = 'Start crawling ' + \
             str(len(crawl_list)) + ' ' + self.code_name + '-news lists.'
@@ -149,10 +159,36 @@ class NowPageCrawler(BasePageCrawler):
                     news_page['url_md5'] = row['url_md5']
                     news_page['redirected_url'] = html_content['redirected_url']
                     news_page['source_id'] = source_id
-                    if self.floodfire_storage.insert_page(news_page):
+                    ######Diff#######
+                    version = 1
+                    table_name = None
+                    diff_vals = (version, None, None)
+                    if page_diff:
+                        last_page, table_name = self.floodfire_storage.get_last_page(news_page['url_md5'],
+                                                                                        news_page['publish_time'],
+                                                                                        diff_obj.compared_cols)
+                        if last_page != None:
+                            print(news_page['title'])
+                            print(last_page['title'])
+                            diff_col_list = diff_obj.page_diff(news_page, last_page)
+                            if diff_col_list is None:
+                                # 有上一筆，但沒有不同，更新爬抓次數，不儲存
+                                print('has last, no diff')
+                                crawl_count += 1 
+                                self.floodfire_storage.update_list_crawlercount(row['url_md5'])
+                                continue
+                            else:
+                                # 出現Diff，儲存
+                                version = last_page['version'] + 1
+                                last_page_id = last_page['id']
+                                diff_cols = ','.join(diff_col_list)
+                                diff_vals = (version, last_page_id, diff_cols)
+                    ######Diff#######
+                    print(diff_vals)
+                    if self.floodfire_storage.insert_page(news_page, table_name, diff_vals):
                         # 更新爬抓次數記錄
-                        self.floodfire_storage.update_list_crawlercount(
-                            row['url_md5'])
+                        self.floodfire_storage.update_list_crawlercount(row['url_md5'])
+                        self.floodfire_storage.update_list_versioncount(row['url_md5'])
                         # 本次爬抓計數+1
                         crawl_count += 1
                     else:
@@ -165,7 +201,7 @@ class NowPageCrawler(BasePageCrawler):
                         for vistual_row in news_page['visual_contents']:
                             vistual_row['list_id'] = row['id']
                             vistual_row['url_md5'] = row['url_md5']
-                            self.floodfire_storage.insert_visual_link(vistual_row)
+                            self.floodfire_storage.insert_visual_link(vistual_row, version)
 
                     # 隨機睡 2~6 秒再進入下一筆抓取
                     sleep(randint(2, 6))

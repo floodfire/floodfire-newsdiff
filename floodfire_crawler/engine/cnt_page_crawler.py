@@ -139,9 +139,6 @@ class CntPageCrawler(BasePageCrawler):
             diff_obj = FloodfireDiff()
         else:
             diff_obj = None
-        version = 1
-        table_name = None
-        diff_vals = (version, None, None)
         ######Diff#######
         crawl_list = self.floodfire_storage.get_crawllist(source_id, page_diff, diff_obj)
 
@@ -181,7 +178,10 @@ class CntPageCrawler(BasePageCrawler):
                     news_page['image'] = len([v for v in news_page['visual_contents'] if v['type']==1])
                     news_page['video'] = len([v for v in news_page['visual_contents'] if v['type']==2])
 
-                   ######Diff#######
+                    ######Diff#######
+                    version = 1
+                    table_name = None
+                    diff_vals = (version, None, None)                    
                     if page_diff:
                         last_page, table_name = self.floodfire_storage.get_last_page(news_page['url_md5'],
                                                                                      news_page['publish_time'],
