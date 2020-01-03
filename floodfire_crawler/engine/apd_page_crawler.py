@@ -60,7 +60,7 @@ class ApdPageCrawler(BasePageCrawler):
 
         # --- 取出記者 ---
         # (XXX/XX報導) (曾珮瑛、張世瑜/高雄報導) https://regex101.com/r/DvppFX/1
-        author = re.search(r'[(（](.*?中心)?(.*?)(／|\/|╱)(.*?)報導[）)]', report['article'])
+        author = re.search(r'[(（](.*?中心)?(.*?)(／|\/|╱)(.*?)報導[）)]', report['body'])
         if author is not None:
             report['authors'] = [author.group(2)]
         else:
