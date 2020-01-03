@@ -56,21 +56,21 @@ class ApdPageCrawler(BasePageCrawler):
         # --- 取出內文 ---
         article = [d['content'] for d in res_json['content_elements'][0]['content_elements'] if d['type'] == 'raw_html'][0].replace("<br>", "\n").replace("<br />", "\n")
         soup = BeautifulSoup(article, 'lxml')
-        report['article'] = soup.get_text()
+        report['body'] = soup.get_text()
 
         # --- 取出記者 ---
         # (XXX/XX報導) (曾珮瑛、張世瑜/高雄報導) https://regex101.com/r/DvppFX/1
-        author = re.search(r'[(（](.*?中心)?(.*?)(／|\/|╱)(.*?)報導[）)]', report['article'])
+        author = re.search(r'[(（](.*?中心)?(.*?)(／|\/|╱)(.*?)報導[）)]', report['body'])
         if author is not None:
-            report['authour'] = [author.group(2)]
+            report['authors'] = [author.group(2)]
         else:
-            report['authour'] = ['Cannot find in report']
+            report['authors'] = ['Cannot find in report']
 
         # --- 取出發布時間 ---
         report['publish_time'] = self.fetch_publish_time(res_json['content_elements'][0]['last_updated_date'])
 
         # --- 取出關鍵字 ---
-        report['keyword'] = [tag['text'] for tag in res_json['content_elements'][0]['taxonomy']['tags']]
+        report['keywords'] = [tag['text'] for tag in res_json['content_elements'][0]['taxonomy']['tags']]
 
         # --- 取出圖片數 ---
         image = [d for d in res_json['content_elements'][0]['content_elements'] if d['type'] == 'image']
@@ -109,13 +109,13 @@ class ApdPageCrawler(BasePageCrawler):
         test = re.search(r'\/(\d{7})\/', inUrl)
         if(test != None):
             mId = test.group(1)
-            outUrl = 'https://tw.appledaily.com/pf/api/v3/content/fetch/content-by-motherlode-id?query=%7B%22id%22%3A%221_{mId}%22%2C%22website_url%22%3A%22tw-appledaily%22%7D&d=35&_website=tw-appledaily'.format(
+            outUrl = 'https://tw.appledaily.com/pf/api/v3/content/fetch/content-by-motherlode-id?query=%7B%22id%22%3A%221_{mId}%22%2C%22website_url%22%3A%22tw-appledaily%22%7D'.format(
                 mId=mId)
 
         t = re.search(r'\/([[:upper:],0-9]{26})\/', inUrl)
         if(t != None):
             Id = t.group(1)
-            outUrl = 'https://tw.appledaily.com/pf/api/v3/content/fetch/content-by-id?query=%7B%22id%22%3A%22{id}%22%2C%22published%22%3Atrue%2C%22website_url%22%3A%22tw-appledaily%22%7D&_website=tw-appledaily'.format(
+            outUrl = 'https://tw.appledaily.com/pf/api/v3/content/fetch/content-by-id?query=%7B%22id%22%3A%22{id}%22%2C%22published%22%3Atrue%2C%22website_url%22%3A%22tw-appledaily%22%7D'.format(
                 id=Id)
         return outUrl
 
