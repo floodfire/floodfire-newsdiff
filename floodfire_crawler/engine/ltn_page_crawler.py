@@ -573,9 +573,6 @@ class LtnPageCrawler(BasePageCrawler):
             diff_obj = FloodfireDiff()
         else:
             diff_obj = None
-        version = 1
-        table_name = None
-        diff_vals = (version, None, None)
         ######Diff#######
         crawl_list = self.floodfire_storage.get_crawllist(source_id, page_diff, diff_obj)
         # log 起始訊息
@@ -616,6 +613,9 @@ class LtnPageCrawler(BasePageCrawler):
                     news_page['publish_time'] = re.sub('[ ]+', ' ', news_page['publish_time'])
 
                     ######Diff#######
+                    version = 1
+                    table_name = None
+                    diff_vals = (version, None, None)
                     if page_diff:
                         last_page, table_name = self.floodfire_storage.get_last_page(news_page['url_md5'],
                                                                                      news_page['publish_time'],
