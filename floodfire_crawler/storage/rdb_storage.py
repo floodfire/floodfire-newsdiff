@@ -229,7 +229,7 @@ class FloodfireStorage():
             page_row['url_md5'],
             page_row['redirected_url'],
             page_row['source_id'],
-            page_row['publish_time'][:19],
+            page_row['publish_time'],
             page_row['title'],
             page_row['body'],
             ','.join(page_row['authors']),

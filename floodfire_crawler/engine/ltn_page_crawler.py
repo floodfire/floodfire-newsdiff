@@ -611,6 +611,7 @@ class LtnPageCrawler(BasePageCrawler):
                     news_page['image'] = len(news_page['visual_contents'])
                     news_page['video'] = 0
                     news_page['publish_time'] = re.sub('[ ]+', ' ', news_page['publish_time'])
+                    news_page['publish_time'] = news_page['publish_time'][:19]
 
                     ######Diff#######
                     version = 1
