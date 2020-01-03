@@ -109,13 +109,13 @@ class ApdPageCrawler(BasePageCrawler):
         test = re.search(r'\/(\d{7})\/', inUrl)
         if(test != None):
             mId = test.group(1)
-            outUrl = 'https://tw.appledaily.com/pf/api/v3/content/fetch/content-by-motherlode-id?query=%7B%22id%22%3A%221_{mId}%22%2C%22website_url%22%3A%22tw-appledaily%22%7D&d=36&_website=tw-appledaily'.format(
+            outUrl = 'https://tw.appledaily.com/pf/api/v3/content/fetch/content-by-motherlode-id?query=%7B%22id%22%3A%221_{mId}%22%2C%22website_url%22%3A%22tw-appledaily%22%7D'.format(
                 mId=mId)
 
         t = re.search(r'\/([[:upper:],0-9]{26})\/', inUrl)
         if(t != None):
             Id = t.group(1)
-            outUrl = 'https://tw.appledaily.com/pf/api/v3/content/fetch/content-by-id?query=%7B%22id%22%3A%22{id}%22%2C%22published%22%3Atrue%2C%22website_url%22%3A%22tw-appledaily%22%7D&_website=tw-appledaily'.format(
+            outUrl = 'https://tw.appledaily.com/pf/api/v3/content/fetch/content-by-id?query=%7B%22id%22%3A%22{id}%22%2C%22published%22%3Atrue%2C%22website_url%22%3A%22tw-appledaily%22%7D'.format(
                 id=Id)
         return outUrl
 
