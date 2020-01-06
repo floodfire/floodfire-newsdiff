@@ -88,7 +88,7 @@ class CntPageCrawler(BasePageCrawler):
             page['visual_contents'].append(
             {
                 'type': 2,
-                'visual_src': video.div['data-href'],
+                'visual_src': video.iframe['src'] if video.iframe is not None else video.div['data-href'],
                 'caption': video.figcaption.text
             })
         
