@@ -137,7 +137,7 @@ class CnaPageCrawler(BasePageCrawler):
             page['visual_contents'].append({
                 'type':2,
                 'visual_src':video_list[i].find('iframe')['data-src'],
-                'caption':video_list[i].find_all('div',{'class':'picinfo'})[0].text
+                'caption':video_list[i].find_all('div',{'class':'picinfo'})[0].text if len(video_list[i].find_all('div',{'class':'picinfo'})) > 0 else ''
             })
 
         outerMedia_list = soup.find_all(lambda tag:tag.name=='div' and tag.get('class')==['outerMedia'])
