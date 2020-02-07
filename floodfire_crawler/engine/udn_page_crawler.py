@@ -104,8 +104,8 @@ class UdnPageCrawler(BasePageCrawler):
                 if img_raw.find('div', {'class', 'imgbox'}) is None:
                     if img_raw.a is not None:
                         pic_list.append({'url':img_raw.a['href'], 'desc':img_raw.find('figcaption').text})
-                    else:
-                        pic_list.append({'url':img_raw.img['src'], 'desc':img_raw.img['title']})
+                    elif img_raw.img is not None:
+                        pic_list.append({'url':img_raw.img['src'], 'desc':img_raw.img['title'] if img_raw.img.has_attr('title') else ''})
         page['image'] = len(pic_list)
 
         # -- 取出視覺資料連結（圖片） ---
@@ -158,6 +158,10 @@ class UdnPageCrawler(BasePageCrawler):
             page['body'] = content_area[0].text
         else:
             contents = [x.text for x in content_area if x.text != '' and x.text!=' ' and x.text!='\n' and x.p is None and x.script is None]
+            # 如果內文只有一張圖
+            if(len(contents)==0):
+                page['body'] = ''
+                return page
             if(contents[0][0]==' '):
                 contents[0] = contents[0][1:]
             page['body'] = ('\n').join(contents)
@@ -234,6 +238,7 @@ class UdnPageCrawler(BasePageCrawler):
 
                     # 特例：台灣醒報
                     if (news_page['authors'][0] == '台灣醒報'):
+                        print('台灣醒報，跳過')
                         self.floodfire_storage.update_list_errorcount(row['url_md5'])
                         sleep(randint(2, 6))
                         continue

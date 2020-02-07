@@ -84,6 +84,10 @@ class ApdPageCrawler(BasePageCrawler):
             'caption': i['caption']
         } for i in image]
 
+        if len(res_json['content_elements'][0]['promo_items']) == 0:
+            report['video'] = 0
+            return report
+
         video = res_json['content_elements'][0]['promo_items']['basic']
         if video['type'] == 'video':
             report['video'] = 1
@@ -100,7 +104,10 @@ class ApdPageCrawler(BasePageCrawler):
 
     def fetch_publish_time(self, timeString):
         # timeString e.g 2019-12-24T13:03:18.419Z
-        news_time = strftime('%Y-%m-%d %H:%M:%S', strptime(timeString, '%Y-%m-%dT%H:%M:%S.%fZ'))
+        if '.' in timeString:
+            news_time = strftime('%Y-%m-%d %H:%M:%S', strptime(timeString, '%Y-%m-%dT%H:%M:%S.%fZ'))
+        else:
+            news_time = strftime('%Y-%m-%d %H:%M:%S', strptime(timeString, '%Y-%m-%dT%H:%M:%SZ'))
         return(news_time)
 
     def transform(self, inUrl):
