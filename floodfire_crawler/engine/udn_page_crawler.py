@@ -65,18 +65,21 @@ class UdnPageCrawler(BasePageCrawler):
         else:
             if soup.find('div',{'class', 'shareBar'}) is not None:
                 page['publish_time'] = soup.find('div',{'class', 'shareBar'}).span.text
-            else:
+            elif soup.find('div',{'class', 'article-info'}) is not None:
                 page['publish_time'] = soup.find('div', {'class', 'article-info'}).text
+            else:
+                page['publish_time'] = soup.find('section', {'class', 'authors'}).time.text+':00'
 
         # --- 取出關鍵字 ---
         #keywords
         tag_area = soup.find(id='story_tags')
         if tag_area is not None:
             page['keywords'] = [x.text for x in soup.find(id='story_tags').find_all('a')]
+        elif len(soup.find_all('a', {'class', 'tag-name'})) > 0:
+            page['keywords'] = [x.text for x in soup.find_all('a', {'class', 'tag-name'})]
+        elif len(soup.find_all('a', {'class', 'btn-keyword'}))>0:
+            page['keywords'] = [x.text for x in soup.find_all('a', {'class', 'btn-keyword'})]
         else:
-            if len(soup.find_all('a', {'class', 'tag-name'})) > 0:
-                page['keywords'] = [x.text for x in soup.find_all('a', {'class', 'tag-name'})]
-            else:
                 page['keywords'] = []
         
         # --- 取出記者 ---
@@ -91,8 +94,14 @@ class UdnPageCrawler(BasePageCrawler):
         else:
             if soup.find('div',{'class', 'shareBar__info--author'}) is not None:
                 author_list.append(soup.find('div',{'class', 'shareBar__info--author'}).find(text=True, recursive=False).split(' ')[-1])
-            else:
+            elif soup.find('a', {'class', 'article-info'}) is not None:
                 author_list.append(soup.find('a', {'class', 'article-info'}).text.split(' ')[-1])
+            else:
+                author_section = soup.find('section', {'class', 'authors'}).span
+                if (author_section.a is not None):
+                    author_list.append(author_section.a.text)
+                else:
+                    author_list.append(author_section.text)
 
         page['authors']=author_list
 
@@ -105,7 +114,10 @@ class UdnPageCrawler(BasePageCrawler):
                     if img_raw.a is not None:
                         pic_list.append({'url':img_raw.a['href'], 'desc':img_raw.find('figcaption').text})
                     elif img_raw.img is not None:
-                        pic_list.append({'url':img_raw.img['src'], 'desc':img_raw.img['title'] if img_raw.img.has_attr('title') else ''})
+                        img_url = img_raw.img['src'] if img_raw.img.has_attr('src') else img_raw.img['data-src']
+                        img_desc = img_raw.img['title'] if img_raw.img.has_attr('title') else img_raw.text
+                        pic_list.append({'url':img_url, 'desc':img_desc})
+                    
         page['image'] = len(pic_list)
 
         # -- 取出視覺資料連結（圖片） ---
@@ -152,6 +164,9 @@ class UdnPageCrawler(BasePageCrawler):
         # 去除廣告
         while soup.find("div", "modal") !=None:
             soup.find("div", "modal").decompose()
+        # 去除推薦文章
+        while soup.find("div", "story-list__text") !=None:
+            soup.find("div", "story-list__text").decompose()
         # 如果有轉址
         content_area = soup.find_all('p')
         if 'window.location.href' in content_area[0].text:

@@ -7,6 +7,7 @@ from time import sleep
 from floodfire_crawler.core.base_list_crawler import BaseListCrawler
 from floodfire_crawler.storage.rdb_storage import FloodfireStorage
 import time
+import json
 
 class UdnListCrawler(BaseListCrawler):
 
@@ -33,19 +34,18 @@ class UdnListCrawler(BaseListCrawler):
         return None
 	
 	
-    def fetch_list(self, soup):
+    def fetch_list(self, soup_json):
         news = []
-        news_rows = soup.find_all("dt", {"class": "lazyload"})
+        news_rows = soup_json['lists']
         #md5hash = md5()
         for news_row in news_rows:
-            link_a = news_row.find_all("a")[0]
-            md5hash = md5(link_a['href'].split("?")[0].encode('utf-8')).hexdigest()
+            md5hash = md5(news_row['titleLink'].encode('utf-8')).hexdigest()
             raw = {
-                'title': news_row.find_all("a")[-1].text.strip().replace("　"," ").replace("\u200b",""),
-                'url': "https://udn.com"+link_a['href'].split("?")[0],
+                'title': news_row['title'],
+                'url': "https://udn.com"+news_row['titleLink'],
                 'url_md5': md5hash,
                 'source_id': 8,
-                'category': news_row.find_all("a")[-2].text
+                'category': 'None' #新的API找不到解析欄位
             }
             news.append(raw)
         return news
@@ -53,38 +53,16 @@ class UdnListCrawler(BaseListCrawler):
     def make_a_round(self):
         #first page
         consecutive = 0
-        page_url = self.url
-        print(page_url)
-        sleep(2)
-        html = self.fetch_html(page_url)
-        #time stamp for next pages
-        stamp = round(time.time()*1000)
-        
-        soup = BeautifulSoup(html, 'html.parser')
-        news_list = self.fetch_list(soup)
-        #print(news_list)
-        for news in news_list:
-            if(self.floodfire_storage.check_list(news['url_md5']) == 0):
-                self.floodfire_storage.insert_list(news)
-                consecutive = 0
-            else:
-                print(news['title']+' exist! skip insert.')
-                consecutive += 1
-
-        total_pages = int(soup.find_all("div",{"class":"showmore"})[0].a['data-totalpages'])
-
-        #next page
-        for page in range(2, total_pages+1):
-            if consecutive > 20:
-                print('News consecutive more than 20, stop crawler!!')
-                break
-            page_url = "https://udn.com/news/get_breaks_article/"+str(page)+"/1/0?_="+str(stamp+page)
-            print(page_url)
-            sleep(2)
+        base_url = 'https://udn.com/api/more?id=&channelId=1&cate_id=0&type=breaknews&page='
+        now_page = 1
+        while(1):
+            page_url = base_url + str(now_page)
             html = self.fetch_html(page_url)
-            soup = BeautifulSoup(html, 'html.parser')
-            news_list = self.fetch_list(soup)
-            #print(news_list)
+            soup_json = json.loads(html)
+            if ('lists' not in soup_json):
+                break
+
+            news_list = self.fetch_list(soup_json)
             for news in news_list:
                 if(self.floodfire_storage.check_list(news['url_md5']) == 0):
                     self.floodfire_storage.insert_list(news)
@@ -92,8 +70,11 @@ class UdnListCrawler(BaseListCrawler):
                 else:
                     print(news['title']+' exist! skip insert.')
                     consecutive += 1
-            page += 1
-
+            if consecutive > 20:
+                print('News consecutive more than 20, stop crawler!!')
+                break
+            sleep(2)
+            now_page = now_page + 1
 
     def run(self):
         self.make_a_round()
