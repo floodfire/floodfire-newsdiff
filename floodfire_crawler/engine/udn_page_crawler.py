@@ -11,6 +11,7 @@ from random import randint
 from floodfire_crawler.core.base_page_crawler import BasePageCrawler
 from floodfire_crawler.storage.rdb_storage import FloodfireStorage
 from floodfire_crawler.service.diff import FloodfireDiff
+import json
 
 class UdnPageCrawler(BasePageCrawler):
 
@@ -46,64 +47,20 @@ class UdnPageCrawler(BasePageCrawler):
         return response.status_code, resp_content
         
     def fetch_news_content(self, soup):
+        myjson_str = [x for x in soup.find_all('script') if x.has_attr('type') and x['type'] == 'application/ld+json'][0]
+        myjson = json.loads(myjson_str.text.replace('//', '').replace('\n', '').replace('\r', ''))
+        if type(myjson) == list:
+            myjson = myjson[-1]
 
         page = {}
-
-        # --- 取出標題 ---
-        if soup.find('h1', {'class', 'story_art_title'}) is None:
-            title = soup.h1.text.replace("　", " ").replace("\u200b","")
+        page['title'] = myjson['headline']
+        page['publish_time'] = myjson['datePublished'].split('+')[0].replace('T', ' ')
+        page['keywords'] = myjson['keywords'].split(',') if 'keywords' in myjson else []
+        full_author = myjson['author']['name']
+        if full_author.find('記者') < 0:
+            page['authors'] = [full_author]
         else:
-            title = soup.find('h1', {'class', 'story_art_title'}).text
-        page['title'] = title
-
-        # --- 取出發布時間 ---
-        if soup.find('div',{'class', 'story_bady_info_author'}) is not None:
-            if soup.find('div',{'class', 'story_bady_info_author'}).time is not None:
-                page['publish_time'] = soup.find('div',{'class', 'story_bady_info_author'}).time['datetime'] + ' 00:00'
-            else:
-                page['publish_time'] = soup.find('div',{'class', 'story_bady_info_author'}).span.text
-        else:
-            if soup.find('div',{'class', 'shareBar'}) is not None:
-                page['publish_time'] = soup.find('div',{'class', 'shareBar'}).span.text
-            elif soup.find('div',{'class', 'article-info'}) is not None:
-                page['publish_time'] = soup.find('div', {'class', 'article-info'}).text
-            else:
-                page['publish_time'] = soup.find('section', {'class', 'authors'}).time.text+':00'
-
-        # --- 取出關鍵字 ---
-        #keywords
-        tag_area = soup.find(id='story_tags')
-        if tag_area is not None:
-            page['keywords'] = [x.text for x in soup.find(id='story_tags').find_all('a')]
-        elif len(soup.find_all('a', {'class', 'tag-name'})) > 0:
-            page['keywords'] = [x.text for x in soup.find_all('a', {'class', 'tag-name'})]
-        elif len(soup.find_all('a', {'class', 'btn-keyword'}))>0:
-            page['keywords'] = [x.text for x in soup.find_all('a', {'class', 'btn-keyword'})]
-        else:
-                page['keywords'] = []
-        
-        # --- 取出記者 ---
-        #author
-        author_list = []
-        author_area = soup.find('div',{'class', 'story_bady_info_author'})
-        if author_area is not None:
-            if author_area.a is not None:
-                author_list.append(author_area.a.text)
-            else:
-                author_list.append(author_area.find(text=True, recursive=False).split(' ')[0])
-        else:
-            if soup.find('div',{'class', 'shareBar__info--author'}) is not None:
-                author_list.append(soup.find('div',{'class', 'shareBar__info--author'}).find(text=True, recursive=False).split(' ')[-1])
-            elif soup.find('a', {'class', 'article-info'}) is not None:
-                author_list.append(soup.find('a', {'class', 'article-info'}).text.split(' ')[-1])
-            else:
-                author_section = soup.find('section', {'class', 'authors'}).span
-                if (author_section.a is not None):
-                    author_list.append(author_section.a.text)
-                else:
-                    author_list.append(author_section.text)
-
-        page['authors']=author_list
+            page['authors'] = [(full_author+' ')[full_author.find('記者')+2:full_author.find('／')]]
 
         # --- 取出圖片數 ---
         img_raws = soup.select('figure')
@@ -130,8 +87,8 @@ class UdnPageCrawler(BasePageCrawler):
                 })
 
         # --- 取出影片數 ---
-        video_raws = soup.find_all('div', {'class': 'video-container'})
         video_list = list()
+        video_raws = soup.find_all('div', {'class': 'video-container'})
         if(video_raws !=None):
             for video_raw in video_raws:
                 if video_raw.iframe.has_attr('src'):
@@ -142,6 +99,13 @@ class UdnPageCrawler(BasePageCrawler):
                     video_desc = video_raw.iframe['desc']
                 else:
                     video_desc = None
+                video_list.append({'url':video_url, 'title':video_desc})
+        # fb影片
+        video_raws = soup.find_all('div', {'class': 'fb-video'})
+        if(video_raws !=None):
+            for video_raw in video_raws:
+                video_url = video_raw['data-href']
+                video_desc = None
                 video_list.append({'url':video_url, 'title':video_desc})
 
         page['video'] = len(video_list)
@@ -227,12 +191,25 @@ class UdnPageCrawler(BasePageCrawler):
                 if status_code == requests.codes.ok:
                     print('crawling... id: {}'.format(row['id']))
                     soup = BeautifulSoup(html_content['html'], 'html.parser')
+                    ### 檢查是否有轉址(javascript)
+                    possible_redirect = [x.text for x in soup.find_all('script') if x.text.find('window.location.href')!=-1]
+                    is_redirect = len(possible_redirect) > 0
+                    if is_redirect:
+                        print('redirecting... id: {}'.format(row['id']))
+                        redirect_url = re.findall('https?://(?:[-\w/.]|(?:%[\da-fA-F]{2}))+', possible_redirect[0])[0]
+                        status_code, html_content = self.fetch_html(redirect_url)
+                        html_content['redirected_url'] = redirect_url
+                        if status_code == requests.codes.ok:
+                            soup = BeautifulSoup(html_content['html'], 'html.parser')
+                        else:
+                            continue
+                    ###
                     news_page = self.fetch_news_content(soup)
                     
                     #miss while redirect, put back later
                     publish_time = news_page['publish_time']
 
-                    #if there is redirection
+                    #if there is redirection(內文)
                     if('window.location.href' in news_page['body']):
                         self.floodfire_storage.update_list_errorcount(row['url_md5'])
                         redirect_url = re.findall('https?://(?:[-\w/.]|(?:%[\da-fA-F]{2}))+', news_page['body'])[0]
