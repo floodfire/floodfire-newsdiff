@@ -16,7 +16,16 @@ class FloodfireDiff():
         5:["3c","3C","auto","istyle","partners","playing","時尚","汽車","玩咖","英文"],
         6:[],
         7:[],
-        8:["閱讀"]
+        8:["閱讀"],
+        9:[],
+        10:[],
+        11:[],
+        12:[],
+        13:[],
+        14:[],
+        15:[],
+        16:[],
+        17:[]
     }
     compared_cols = ['publish_time', 'title', 'body', 'authors', 'image', 'video']
 
