@@ -59,7 +59,30 @@ class TsmPageCrawler(BasePageCrawler):
         page['title'] = soup.find(attrs={'id': 'article_title'}).text.strip().replace('\u3000', ' ')
         # --- 取出內文 ---
         article_content = soup.article.findChildren()
-        page['body'] = "\n".join([x.text for x in article_content if (x.name == 'p') or (x.name == 'h2')])
+        body_list = []
+        for x in article_content:
+            if x.name == 'p':
+                if x.has_attr('aid'):
+                    # 一般文章段落
+                    body_list.append(x.text)
+                elif (x.has_attr('class') and x.attrs['class']==['rtecenter']):
+                    # fb欄位，引用方式跟youtube相同
+                    if 'facebook.com' in x.iframe['src']:
+                        body_list.append('（# 水火標記：引用fb文章，網址：'+x.iframe['src']+'）')
+                elif x.attrs == {}:
+                    # 付費版文章段落
+                    body_list.append(x.text)
+            elif x.name == 'h2':
+                # 一般文章標題
+                body_list.append(x.text)
+            elif (x.has_attr('class') and x.attrs['class'] == ['twitter-tweet']):
+                #twitter欄位
+                body_list.append('（# 水火標記：引用twitter文章，網址：'+x.find_all('a')[-1]['href']+'）')
+
+        if (soup.find(attrs={'id': 'premium_block'}) != None):
+            # 付費方塊註記
+            body_list.append('（# 水火標記：內文未完，以下是付費方塊。）')
+        page['body'] = "\n".join(body_list)
 
         # --- 取出發布時間 ---
         page['publish_time'] = self.fetch_publish_time(soup)
@@ -107,6 +130,9 @@ class TsmPageCrawler(BasePageCrawler):
         # -- 取出視覺資料連結（影片） ---
         videos = soup.article.find_all('iframe')
         for video in videos:
+            if 'facebook.com' in video['src']:
+                # 臉書的引用格式跟youtube一樣
+                continue
             page['visual_contents'].append(
             {
                 'type': 2,
