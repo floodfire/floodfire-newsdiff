@@ -21,6 +21,8 @@ from floodfire_crawler.engine.ntk_list_crawler import NtkListCrawler
 from floodfire_crawler.engine.ntk_page_crawler import NtkPageCrawler
 from floodfire_crawler.engine.now_list_crawler import NowListCrawler
 from floodfire_crawler.engine.now_page_crawler import NowPageCrawler
+from floodfire_crawler.engine.setn_list_crawler import SetnListCrawler
+from floodfire_crawler.engine.setn_page_crawler import SetnPageCrawler
 
 
 class Crawler():
@@ -134,6 +136,17 @@ class Crawler():
             npc = NowPageCrawler(self.config, self.logme)
             npc.run(self.args.raw, self.args.diff, self.args.visual)
 
+    def __setn(self):
+        """
+        三立新聞 執行區間
+        """
+        if self.args.typeof == 'list':
+            slc = SetnListCrawler(self.config)
+            slc.run()
+        elif self.args.typeof == 'page':
+            spc = SetnPageCrawler(self.config, self.logme)
+            spc.run(self.args.raw, self.args.diff, self.args.visual)
+
     def main(self):
 
         if self.args.media == 'ltn':
@@ -159,6 +172,9 @@ class Crawler():
 
         if self.args.media == 'now':
             self.__now()
+
+        if self.args.media == 'setn':
+            self.__setn()
 
 
 if __name__ == '__main__':
