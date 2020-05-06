@@ -21,9 +21,10 @@ from floodfire_crawler.engine.ntk_list_crawler import NtkListCrawler
 from floodfire_crawler.engine.ntk_page_crawler import NtkPageCrawler
 from floodfire_crawler.engine.now_list_crawler import NowListCrawler
 from floodfire_crawler.engine.now_page_crawler import NowPageCrawler
+from floodfire_crawler.engine.tsm_list_crawler import TsmListCrawler
+from floodfire_crawler.engine.tsm_page_crawler import TsmPageCrawler
 from floodfire_crawler.engine.setn_list_crawler import SetnListCrawler
 from floodfire_crawler.engine.setn_page_crawler import SetnPageCrawler
-
 
 class Crawler():
     def __init__(self, args):
@@ -136,6 +137,18 @@ class Crawler():
             npc = NowPageCrawler(self.config, self.logme)
             npc.run(self.args.raw, self.args.diff, self.args.visual)
 
+    def __tsm(self):
+        """
+        風傳媒 執行區間
+        """
+        if self.args.typeof == 'list':
+            tsc = TsmListCrawler(self.config)
+            tsc.url = 'https://www.storm.mg/articles/'
+            tsc.run()
+        elif self.args.typeof == 'page':
+            tsc = TsmPageCrawler(self.config, self.logme)
+            tsc.run(self.args.raw, self.args.diff, self.args.visual)
+            
     def __setn(self):
         """
         三立新聞 執行區間
@@ -173,9 +186,11 @@ class Crawler():
         if self.args.media == 'now':
             self.__now()
 
+        if self.args.media == 'tsm':
+            self.__tsm()
+
         if self.args.media == 'setn':
             self.__setn()
-
 
 if __name__ == '__main__':
     parser = ArgumentParser(description="水火新聞爬蟲")
