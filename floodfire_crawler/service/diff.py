@@ -5,6 +5,7 @@ import time
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
+
 class FloodfireDiff():
     # 列出各新聞的版別黑名單，以key=source_id, value=版別方式呈現
     # 1=蘋果日報, 2=中時電子報, 3=中央社, 4=ETtoday, 5=自由時報, 6=新頭殼, 7=nownews, 8=聯合新聞網
@@ -47,7 +48,7 @@ class FloodfireDiff():
             else:
                 # 其中一個有該項目，所以有Diff
                 diff_col_list.append(compared_col)
-        if len(diff_col_list)==0:
+        if len(diff_col_list) == 0:
             return None
         else:
             return diff_col_list
