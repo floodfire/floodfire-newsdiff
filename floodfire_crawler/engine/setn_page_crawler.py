@@ -51,14 +51,12 @@ class SetnPageCrawler(BasePageCrawler):
         page = {}
 
         # --- 取出標題 ---
-        page['title'] = (
-            soup.find('h1', class_='news-title-3') or soup.find('h1', {'id': 'newsTitle'})
-        ).get_text(strip=True)
+        page['title'] = (soup.find('h1', class_='news-title-3') or soup.find('h1', {'id': 'newsTitle'})).get_text(strip=True)
 
         # --- 取出內文 ---
         page['body'] = "\n".join([
             p.get_text(strip=True)
-            for p in soup.find('article').select('p')[1:]
+            for p in soup.find('article').select('p')[0 if soup.find('span', class_='reporter') != None and soup.find('span', class_='reporter').get_text(strip=True) != '' else 1:]
             if re.match(r'[▲▼]', p.get_text()) is None
         ])
 
@@ -74,7 +72,8 @@ class SetnPageCrawler(BasePageCrawler):
 
         # --- 取出記者 ---
         # authors
-        page['authors'] = soup.find('article').find_all('p')[0].get_text(strip=True)
+        page['authors'] = [soup.find('span', class_='reporter').get_text(strip=True) if soup.find('span', class_='reporter') != None and soup.find(
+            'span', class_='reporter').get_text(strip=True) != '' else soup.find('article').find_all('p')[0].get_text(strip=True)]
 
         # --- 取出圖片數 ---
         image = soup.find('article').findAll('img')

@@ -37,6 +37,7 @@ class SetnListCrawler(BaseListCrawler):
         news_rows = [news for news in
                      soup.find('div', class_='NewsList').find_all('div', class_='col-sm-12')
                      if re.match(r'https:\/\/watch\.setn\.com', news.find('a', 'gt')['href']) is None
+                     and re.match(r'https:\/\/travel\.setn\.com',news.find('a','gt')['href']) is None
                      ]
 
         for news_row in news_rows:
