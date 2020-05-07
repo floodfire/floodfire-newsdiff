@@ -51,7 +51,7 @@ class TVBSListCrawler(BaseListCrawler):
 
         # next page
         for mydate in (today - timedelta(days=x) for x in range(numdays)):
-            newsOffset = 6
+            newsOffset = 0
             URL = f"https://news.tvbs.com.tw/news/LoadMoreOverview_realtime?showdate={mydate}&newsoffset={newsOffset}&ttalkoffset=0&liveoffset=0"
 
             print(URL)
@@ -60,6 +60,8 @@ class TVBSListCrawler(BaseListCrawler):
             news_list = self.fetch_list(soup)
 
             while(len(news_list) % 6 == 0):
+                newsOffset += 6
+                URL = f"https://news.tvbs.com.tw/news/LoadMoreOverview_realtime?showdate={mydate}&newsoffset={newsOffset}&ttalkoffset=0&liveoffset=0"
                 print(URL)
                 sleep(2)
                 html = self.fetch_html(URL)
