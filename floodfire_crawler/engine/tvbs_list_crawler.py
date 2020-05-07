@@ -36,7 +36,7 @@ class TVBSListCrawler(BaseListCrawler):
         return [{
             'url': 'https://news.tvbs.com.tw' + a['href'],
             'title': a.h2.get_text(strip=True),
-            'url_md5': md5('https://news.tvbs.com.tw' + a['href']).hexdigest(),
+            'url_md5': md5(('https://news.tvbs.com.tw' + a['href']).encode('utf-8')).hexdigest(),
             'source_id': 9,
             'category': 'None'
         } for a in soup.find_all('a')
