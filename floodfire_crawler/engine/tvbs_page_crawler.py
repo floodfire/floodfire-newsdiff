@@ -68,9 +68,9 @@ class TVBSPageCrawler(BasePageCrawler):
         # --- 取出記者 ---
         authour = soup.find('h4', {'class': 'font_color5 leftBox1'})
         if authour is not None:
-            page['authour'] = [authour.get_text(strip=True)]
+            page['authors'] = [authour.get_text(strip=True)]
         else:
-            page['authour'] = ['None']
+            page['authors'] = ['None']
 
         # --- 取出圖片數 ---
         images = soup.find('div', id='news_detail_div').findAll('img')
@@ -103,7 +103,7 @@ class TVBSPageCrawler(BasePageCrawler):
     def fetch_publish_time(self, soup):
         time = soup.find('meta', {'name': 'lastmod'})['content']
         # '2020-05-03T13:03:00+08:00'
-        news_time = strftime('%Y-%m-%d %H:%M:%S', strptime(time, '%Y-%m.%dT%H:%M:%S'))
+        news_time = strftime('%Y-%m-%d %H:%M:%S', strptime(time[:-6], '%Y-%m-%dT%H:%M:%S'))
         return news_time
 
     def compress_html(self, page_html):
