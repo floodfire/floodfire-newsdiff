@@ -26,7 +26,8 @@ class FloodfireDiff():
         14: [],
         15: [],
         16: [],
-        17: []
+        17: [],
+        18: []
     }
     compared_cols = ['publish_time', 'title', 'body', 'authors', 'image', 'video']
 
