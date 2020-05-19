@@ -59,7 +59,7 @@ class Crawler():
         """
         if self.args.typeof == 'list':
             alc = ApdListCrawler(self.config)
-            alc.url = 'https://tw.appledaily.com/new'
+            alc.url = 'https://tw.appledaily.com/realtime/new/'
             alc.run()
         elif self.args.typeof == 'page':
             apc = ApdPageCrawler(self.config, self.logme)
