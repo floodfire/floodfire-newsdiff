@@ -51,10 +51,11 @@ class ApdPageCrawler(BasePageCrawler):
     def fetch_news_content(self, res_json):
         report = {}
         # --- 取出標題 ---
-        report['title'] = res_json['content_elements'][0]['headlines']['basic']
+        report['title'] = res_json['headlines']['basic'].replace('\u3000', '　')
 
         # --- 取出內文 ---
-        article = [d['content'] for d in res_json['content_elements'][0]['content_elements'] if d['type'] == 'raw_html'][0].replace("<br>", "\n").replace("<br />", "\n")
+        mytext = '\n'.join([d['content'] for d in res_json['content_elements'] if d['type'] in ['text', 'raw_html']])
+        article = mytext.replace("<br>", "\n").replace("<br />", "\n")
         soup = BeautifulSoup(article, 'lxml')
         report['body'] = soup.get_text()
 
@@ -67,13 +68,13 @@ class ApdPageCrawler(BasePageCrawler):
             report['authors'] = ['Cannot find in report']
 
         # --- 取出發布時間 ---
-        report['publish_time'] = self.fetch_publish_time(res_json['content_elements'][0]['last_updated_date'])
+        report['publish_time'] = self.fetch_publish_time(res_json['last_updated_date'])
 
         # --- 取出關鍵字 ---
-        report['keywords'] = [tag['text'] for tag in res_json['content_elements'][0]['taxonomy']['tags']]
+        report['keywords'] = [tag['text'] for tag in res_json['taxonomy']['tags']]
 
         # --- 取出圖片數 ---
-        image = [d for d in res_json['content_elements'][0]['content_elements'] if d['type'] == 'image']
+        image = [d for d in res_json['content_elements'] if d['type'] == 'image']
         report['image'] = len(image)
 
         report['visual_contents'] = list()
@@ -84,11 +85,11 @@ class ApdPageCrawler(BasePageCrawler):
             'caption': i['caption']
         } for i in image]
 
-        if len(res_json['content_elements'][0]['promo_items']) == 0:
+        if len(res_json['promo_items']) == 0:
             report['video'] = 0
             return report
 
-        video = res_json['content_elements'][0]['promo_items']['basic']
+        video = res_json['promo_items']['basic']
         if video['type'] == 'video':
             report['video'] = 1
             # -- 取出視覺資料連結（影片） ---
@@ -111,19 +112,9 @@ class ApdPageCrawler(BasePageCrawler):
         return(news_time)
 
     def transform(self, inUrl):
-
-        outUrl = None
-        test = re.search(r'\/(\d{7})\/', inUrl)
-        if(test != None):
-            mId = test.group(1)
-            outUrl = 'https://tw.appledaily.com/pf/api/v3/content/fetch/content-by-motherlode-id?query=%7B%22id%22%3A%221_{mId}%22%2C%22website_url%22%3A%22tw-appledaily%22%7D'.format(
-                mId=mId)
-
-        t = re.search(r'\/([[:upper:],0-9]{26})\/', inUrl)
-        if(t != None):
-            Id = t.group(1)
-            outUrl = 'https://tw.appledaily.com/pf/api/v3/content/fetch/content-by-id?query=%7B%22id%22%3A%22{id}%22%2C%22published%22%3Atrue%2C%22website_url%22%3A%22tw-appledaily%22%7D'.format(
-                id=Id)
+        Id = inUrl.split('/')[-2]
+        outUrl = 'https://tw.appledaily.com/pf/api/v3/content/fetch/content-by-id?query=%7B%22id%22%3A%22{id}%22%2C%22published%22%3Atrue%2C%22website_url%22%3A%22tw-appledaily%22%7D'.format(
+            id=Id)
         return outUrl
 
     def compress_html(self, page_json):
@@ -188,8 +179,8 @@ class ApdPageCrawler(BasePageCrawler):
                     diff_vals = (version, None, None)
                     if page_diff:
                         last_page, table_name = self.floodfire_storage.get_last_page(news_page['url_md5'],
-                                                                                     news_page['publish_time'],
-                                                                                     diff_obj.compared_cols)
+                                                                                        news_page['publish_time'],
+                                                                                        diff_obj.compared_cols)
                         if last_page != None:
                             diff_col_list = diff_obj.page_diff(news_page, last_page)
                             if diff_col_list is None:
