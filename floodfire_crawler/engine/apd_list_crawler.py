@@ -7,6 +7,7 @@ from time import sleep
 from floodfire_crawler.core.base_list_crawler import BaseListCrawler
 from floodfire_crawler.storage.rdb_storage import FloodfireStorage
 import json
+import re
 
 class ApdListCrawler(BaseListCrawler):
 
@@ -51,7 +52,12 @@ class ApdListCrawler(BaseListCrawler):
         return news
 
     def make_a_round(self):
-        url = 'https://tw.appledaily.com/pf/api/v3/content/fetch/query-feed?query=%7B%22feedOffset%22%3A0%2C%22feedQuery%22%3A%22%22%2C%22feedSize%22%3A%22100%22%2C%22sort%22%3A%22display_date%3Adesc%22%7D&d=72&_website=tw-appledaily'
+        # 取得d值
+        base_url = 'https://tw.appledaily.com/realtime/new/'
+        res = requests.get(base_url)
+        d_value = re.findall('\?d=[0-9]+', res.text)[0].split('=')[1]
+
+        url = 'https://tw.appledaily.com/pf/api/v3/content/fetch/query-feed?query=%7B%22feedOffset%22%3A0%2C%22feedQuery%22%3A%22%22%2C%22feedSize%22%3A%22100%22%2C%22sort%22%3A%22display_date%3Adesc%22%7D&d='+d_value+'&_website=tw-appledaily'
         html = self.fetch_html(url)
         json_soup = json.loads(html)
         consecutive = 0

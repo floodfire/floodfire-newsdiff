@@ -32,7 +32,7 @@ class CnaListCrawler(BaseListCrawler):
         news_cat_dic = {'aipl':'政治', 'aopl':'國際', 'acn':'兩岸', 'aie':'產經', 'asc':'證券', 'ait':'科技','ahel':'生活', 
                 'asoc':'社會', 'aloc':'地方', 'acul':'文化', 'aspt':'運動','amov':'娛樂'}
         news = []
-        total_news_rows = soup.find_all("ul", {"id": "myMainList"})
+        total_news_rows = soup.find_all("ul", {"id": "jsMainList"})
         news_rows = total_news_rows[0].find_all('li')
         #md5hash = md5()
         for news_row in news_rows:
@@ -70,7 +70,7 @@ class CnaListCrawler(BaseListCrawler):
     def make_a_round(self):
         consecutive = 0
         html = self.fetch_html(self.url)
-        soup = BeautifulSoup(html, 'html.parser')  
+        soup = BeautifulSoup(html, 'html.parser')
         news_list = self.fetch_list(soup)
         print(len(news_list))
         for news in news_list:
@@ -90,7 +90,7 @@ class CnaListCrawler(BaseListCrawler):
             offset +=1
             sleep(2)
             page_url = page_temp_url+str(offset)+'/'
-#           print(page_url)
+            #           print(page_url)
             response = requests.get(page_url).json()
             news_list = self.fetch_list2(response)
             print(len(news_list))
