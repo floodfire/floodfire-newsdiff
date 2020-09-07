@@ -63,9 +63,13 @@ class ApdPageCrawler(BasePageCrawler):
         # (XXX/XX報導) (曾珮瑛、張世瑜/高雄報導) https://regex101.com/r/DvppFX/1
         author = re.search(r'[(（](.*?中心)?(.*?)(／|\/|╱)(.*?)報導[）)]', report['body'])
         if author is not None:
-            report['authors'] = [author.group(2)]
+            author_str = author.group(2)
         else:
-            report['authors'] = ['Cannot find in report']
+            author_str = ''
+        left_bracket_pos = max(author_str.rfind('('), author_str.rfind('（'))
+        if (left_bracket_pos > 0):
+            author_str = author_str[(left_bracket_pos+1):]
+        report['authors'] = author_str.split('、')
 
         # --- 取出發布時間 ---
         report['publish_time'] = self.fetch_publish_time(res_json['last_updated_date'])
@@ -96,7 +100,7 @@ class ApdPageCrawler(BasePageCrawler):
             report['visual_contents'].append({
                 'type': 2,
                 'visual_src': video['streams'][0]['url'],
-                'caption': 'video_id:' + video['additional_properties']['video_id']
+                'caption': 'video_id:' + video['additional_properties']['videoId']
             })
         else:
             report['video'] = 0
@@ -113,8 +117,8 @@ class ApdPageCrawler(BasePageCrawler):
 
     def transform(self, inUrl):
         Id = inUrl.split('/')[-2]
-        outUrl = 'https://tw.appledaily.com/pf/api/v3/content/fetch/content-by-id?query=%7B%22id%22%3A%22{id}%22%2C%22published%22%3Atrue%2C%22website_url%22%3A%22tw-appledaily%22%7D'.format(
-            id=Id)
+        outUrl = 'https://tw.appledaily.com/pf/api/v3/content/fetch/content-by-id/' +\
+                 '{"id":"'+Id+'","published":true,"website_url":"tw-appledaily"}'
         return outUrl
 
     def compress_html(self, page_json):

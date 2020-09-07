@@ -57,7 +57,10 @@ class ApdListCrawler(BaseListCrawler):
         res = requests.get(base_url)
         d_value = re.findall('\?d=[0-9]+', res.text)[0].split('=')[1]
 
-        url = 'https://tw.appledaily.com/pf/api/v3/content/fetch/query-feed?query=%7B%22feedOffset%22%3A0%2C%22feedQuery%22%3A%22%22%2C%22feedSize%22%3A%22100%22%2C%22sort%22%3A%22display_date%3Adesc%22%7D&d='+d_value+'&_website=tw-appledaily'
+        url = 'https://tw.appledaily.com/pf/api/v3/content/fetch/query-feed?' + \
+              'query={"feedOffset":0,"feedQuery":"type:story","feedSize":"100","sort":"display_date:desc"}&'+\
+              'd='+d_value+'&_website=tw-appledaily'
+              
         html = self.fetch_html(url)
         json_soup = json.loads(html)
         consecutive = 0
