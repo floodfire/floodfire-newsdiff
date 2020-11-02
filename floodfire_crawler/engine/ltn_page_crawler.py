@@ -47,501 +47,92 @@ class LtnPageCrawler(BasePageCrawler):
 
         return response.status_code, resp_content
 
-    def __news_category(self, soup):
-        """
-        取出 news 類別需要的資料內容
-        """
-        page = dict()
-        page['title'] = soup.h1.text.strip()
-        article_content = [x.text for x in soup.find('div', class_='text').find_all('p', recursive = False) if x.text!='' and x.text.find('\u3000\n')<0 and x.text.find('往下閱讀')<0]
-        page['body'] = "\n".join(article_content)
-        page['publish_time'] = re.sub(r'\n[ ]+', '', soup.find('span', class_='time').text+ ':00')
-        page['keywords'] = soup.find('meta', {'name' : 'keywords'})['content'].split(',')
-        page['authors'] = self.extract_author(page['body'])
-
-        # -- 取出視覺資料連結（圖片） ---
-        page['visual_contents'] = list()
-
-        imgs = soup.find('div', class_='text').find_all('img')
-        for img in imgs:
-            if(img['src'].find('http')>-1):
-                page['visual_contents'].append(
-                    {
-                        'type': 1,
-                        'visual_src': img['src'],
-                        'caption': img['title']
-                    })
-        
-        return page
-
-    def __ent_category(self, soup):
-        """
-        取出 ent 類別需要的資料內容
-        """
-        page = dict()
-        article = soup.find('div', itemprop='articleBody')
-        page['title'] = article.h1.text.strip()
-        p_tags = article.find_all('p',recursive=False)
-        page['body'] = "\n".join([p.text for p in p_tags if len(p.text) > 0])
-        time_string = soup.find('meta', attrs={'name':'pubdate'})
-        page['publish_time'] = strftime('%Y-%m-%d %H:%M:%S', strptime(time_string['content'][:-6], '%Y-%m-%dT%H:%M:%S'))
-
-        # -- 娛樂新聞沒有關鍵字
-        page['keywords'] = list()
-        # 2018-11-18 自由時報全類別改版移除關鍵字區塊，改由 Meta 取得
-        if soup.find('meta', attr={'name':'keywords'}):
-            meta_keywords = soup.find('meta', attr={'name':'keywords'})
-            keywords = meta_keywords['content'].split(',')
-            for keyword in keywords:
-                page['keywords'].append(keyword.strip())
-
-        # -- 取出記者 ---
-        page['authors'] = self.extract_author(page['body'])
-
-        # -- 取出視覺資料連結（圖片） ---
-        page['visual_contents'] = list()
-
-        visuals = article.find_all('span', class_='ph_b ph_d1 tb-c')
-        
-        for visual in visuals:
-            img = visual.find('img')
-            caption = visual.find('span', class_='ph_d').text.strip()
-            page['visual_contents'].append(
-                {
-                    'type': 1,
-                    'visual_src': img['data-original'],
-                    'caption': caption
-                })
-        return page
-
-    def __ec_category(self, soup):
-        """
-        取出 ec 類別需要的資料內容
-        """
-        page = dict()
-        article = soup.find('div', class_='whitecon boxTitle')
-        page['title'] = article.h1.text.strip()
-        page['body'] = "\n".join([x.text for x in soup.find_all('p') if x.text != '' and x.text!='爆' and x.text.find('\u3000\n')<0 and x.text.find('加入自由電子')<0])
-        page['publish_time'] = article.find('span', class_='time').text + ':00'
-
-        # --- 取出關鍵字 ---
-        page['keywords'] = (soup.find('meta', {'name':'keywords'})['content'])
-
-        # -- 取出記者 ---
-        page['authors'] = self.extract_author(page['body'])
-
-        # -- 取出視覺資料連結（圖片） ---
-        page['visual_contents'] = list()
-        visuals = soup.find_all('span', class_='ph_b ph_d1')
-        for visual in visuals:
-            img = visual.find('img')
-            if visual.find('span', class_='ph_d') is not None:
-                caption = visual.find('span', class_='ph_d').text.strip()
-            else:
-                caption = ''
-            page['visual_contents'].append(
-                {
-                    'type': 1,
-                    'visual_src': img['src'],
-                    'caption': caption
-                })
-        return page
-
-    def __sports_category(self, soup):
-        """
-        取出 sports 類別需要的資料內容
-        """
-        page = dict()
-        article = soup.find('div', class_='news_content')
-        page['title'] = article.h1.text.strip()
-        article_content = article.find('div', itemprop='articleBody')
-        p_tags = article_content.find_all('p',recursive=False)
-        page['body'] = "\n".join([p.text for p in p_tags if len(p.text) > 0])
-        page['publish_time'] = article.find('div', class_='c_time').text + ':00'
-
-        # --- 取出關鍵字 ---
-        page['keywords'] = list()
-        if article.find('div', class_='keyword boxTitle'):
-            keywords = article.find('div', class_='keyword boxTitle').find_all('a')
-            for keyword in keywords:
-                page['keywords'].append(keyword.text.strip())
-        elif soup.find('meta', attr={'name':'keywords'}):
-            # 2018-11-18 自由時報全類別改版移除關鍵字區塊，改由 Meta 取得
-            meta_keywords = soup.find('meta', attr={'name':'keywords'})
-            keywords = meta_keywords['content'].split(',')
-            for keyword in keywords:
-                page['keywords'].append(keyword.strip())
-        
-        # -- 取出記者 ---
-        page['authors'] = self.extract_author(page['body'])
-        
-        # -- 取出視覺資料連結（圖片） ---
-        page['visual_contents'] = list()
-        visuals = article_content.find_all('span', class_='ph_b ph_d1')
-        for visual in visuals:
-            img = visual.find('img')
-            caption = visual.find('span', class_='ph_d').text.strip()
-            page['visual_contents'].append(
-                {
-                    'type': 1,
-                    'visual_src': img['src'],
-                    'caption': caption
-                })
-        return page
-
-    def __talk_category(self, soup):
-        """
-        取出 talk 類別需要的資料內容
-        """
-        page = dict()
-        article = soup.find('div', class_='conbox')
-        page['title'] = article.h1.text.strip()
-        article_content = article.find('div', itemprop='articleBody')
-        p_tags = article_content.find_all('p',recursive=False)
-        page['body'] = "\n".join([p.text for p in p_tags if len(p.text) > 0])
-        
-        # 有無作者資訊會影響出現的時間區段
-        if article.find('div', class_='mobile_none'):
-            page['publish_time'] = article.find('div', class_='mobile_none').text + ':00'
-        elif article.find('div', class_='writer_date'):
-            page['publish_time'] = article.find('div', class_='writer_date').text + ':00'
-
-        # --- 取出關鍵字 ---
-        page['keywords'] = list()
-        if article.find('div', class_='kwtab boxTitle'):
-            keywords = article.find('div', class_='kwtab boxTitle').find_all('a')
-            for keyword in keywords:
-                page['keywords'].append(keyword.text.strip())
-        elif soup.find('meta', attr={'name':'keywords'}):
-            # 2018-11-18 自由時報全類別改版移除關鍵字區塊，改由 Meta 取得
-            meta_keywords = soup.find('meta', attr={'name':'keywords'})
-            keywords = meta_keywords['content'].split(',')
-            for keyword in keywords:
-                page['keywords'].append(keyword.strip())
-
-        # -- 取出文章作者 ---
-        if article.find('div', class_='writer boxTitle'):
-            page['authors'] = article.find('div', class_='writer boxTitle').find('a')['data-desc']
-        else:
-            page['authors'] = list()
-
-        # -- 取出視覺資料連結（圖片） ---
-        page['visual_contents'] = list()
-        visuals = article_content.find_all('span', class_='ph_b ph_d1')
-        for visual in visuals:
-            img = visual.find('img')
-            caption = visual.find('span', class_='ph_d').text.strip()
-            page['visual_contents'].append(
-                {
-                    'type': 1,
-                    'visual_src': img['src'],
-                    'caption': caption
-                })
-        return page
-
-    def __istyle_category(self, soup):
-        """
-        取出 istyle 類別需要的資料內容
-        """
-        page = dict()
-        article_title = soup.find('div', class_='caption')
-        page['title'] = article_title.h2.text.strip()
-        article_content = soup.find('article').find('div', itemprop='articleBody')
-        p_tags = article_content.find_all('p', recursive=False)
-        page['body'] = "\n".join([x.text for x in p_tags if x.text!='' and x.text.find('\u3000\n')<0 and x.text.find('往下閱讀')<0 and x.text.find('延伸閱讀')<0 and x.img == None and 'class' not in x.attrs and 'style' not in x.attrs])
-
-        time_string = article_title.find('div', class_='label-date').text
-        page['publish_time'] = strftime('%Y-%m-%d %H:%M:%S', strptime(time_string, '%b. %d %Y %H:%M:%S'))
-
-        # --- 取出關鍵字 ---
-        # 2018-11-13 發現時尚網頁改版，沒有關鍵字區段
-        page['keywords'] = list()
-        if soup.find('article').find('section', class_='tag boxTitle'):
-            keywords = soup.find('article').find('section', class_='tag boxTitle').find_all('a')
-            for keyword in keywords:
-                page['keywords'].append(keyword.text.strip())
-        elif soup.find('meta', attr={'name':'keywords'}):
-            # 2018-11-18 自由時報全類別改版移除關鍵字區塊，改由 Meta 取得
-            meta_keywords = soup.find('meta', attr={'name':'keywords'})
-            keywords = meta_keywords['content'].split(',')
-            for keyword in keywords:
-                page['keywords'].append(keyword.strip())
-
-        # -- 取出記者 ---
-        author = article_title.find('p', class_='auther').find('span').text.strip()
-        page['authors'] = re.findall(r'文／記者(\w*)', author)
-
-        # -- 取出視覺資料連結（圖片） ---
-        page['visual_contents'] = list()
-        visuals = article_content.find_all('span', class_=['ph_b', 'ph_d1'])
-        for visual in visuals:
-            img = visual.find('img')
-            if (visual.find('span', class_='ph_d') != None):
-                caption = visual.find('span', class_='ph_d').text.strip()
-            else:
-                caption = ''
-            page['visual_contents'].append(
-                {
-                    'type': 1,
-                    'visual_src': img['src'],
-                    'caption': caption
-                })
-        return page
-
-    def __3c_category(self, soup):
-        """
-        取出 3c 類別需要的資料內容
-        """
-        page = dict()
-        article = soup.find('div', class_='conbox')
-        page['title'] = article.h1.text.strip()
-        article_content = article.find('div', itemprop='articleBody')
-        p_tags = article_content.find_all('p',recursive=False)
-        page['body'] = "\n".join([p.text for p in p_tags if len(p.text) > 0])
-        page['publish_time'] =  article.find('div', class_='writer').select('span')[1].text + ':00'
-        
-        # --- 取出關鍵字 ---
-        page['keywords'] = list()
-        if article.find('div', class_='contab boxTitle boxText'):
-            keywords = article.find('div', class_='contab boxTitle boxText').find_all('a')
-            for keyword in keywords:
-                page['keywords'].append(keyword.text.strip())
-        elif soup.find('meta', attr={'name':'keywords'}):
-            # 2018-11-18 自由時報全類別改版移除關鍵字區塊，改由 Meta 取得
-            meta_keywords = soup.find('meta', attr={'name':'keywords'})
-            keywords = meta_keywords['content'].split(',')
-            for keyword in keywords:
-                page['keywords'].append(keyword.strip())
-
-        # -- 取出記者 ---
-        author = article.find('div', class_='writer').find('span').text.strip()
-        page['authors'] = re.findall(r'文／記者(\w*)', author)
-        
-        # -- 取出視覺資料連結（圖片） ---
-        page['visual_contents'] = list()
-
-        visuals = article_content.find_all('span', class_='ph_b ph_d1 ')
-        for visual in visuals:
-            img = visual.find('img')
-            caption = visual.find('span', class_='ph_d').text.strip()
-            page['visual_contents'].append(
-                {
-                    'type': 1,
-                    'visual_src': img['src'],
-                    'caption': caption
-                })
-        return page
-
-    def __market_category(self, soup):
-        """
-        取出 market 類別需要的資料內容
-        """
-        page = dict()
-        article = soup.find('div', class_='whitecon articlebody boxTitle')
-        page['title'] = article.h1.find('div', class_='boxText').text.strip()
-        article_content = article.find('div', class_='text')
-        p_tags = article_content.find_all('p',recursive=False)
-        page['body'] = "\n".join([p.text for p in p_tags if len(p.text) > 0])
-        page['publish_time'] = article_content.find('span', class_='date1').text
-        return page
-
-    def __auto_category(self, soup):
-        """
-        取出 auto 類別需要的資料內容
-        """
-        page = dict()
-        article_title = soup.find('h1', class_='h1tt')
-        page['title'] = article_title.text.strip()
-        article_content = soup.find('div', itemprop='articleBody')
-        p_tags = article_content.find_all('p',recursive=False)
-        page['body'] = "\n".join([p.text for p in p_tags if len(p.text) > 0])
-        page['publish_time'] = article_content.find('span', class_='h1dt').text + ':00'
-
-        # --- 取出關鍵字 ---
-        page['keywords'] = list()
-        if soup.find('div', class_='kw2 boxTitle'):
-            keywords = soup.find('div', class_='kw2 boxTitle').find_all('a')
-            for keyword in keywords:
-                page['keywords'].append(keyword.text.strip())
-        elif soup.find('meta', attr={'name':'keywords'}):
-            # 2018-11-18 自由時報全類別改版移除關鍵字區塊，改由 Meta 取得
-            meta_keywords = soup.find('meta', attr={'name':'keywords'})
-            keywords = meta_keywords['content'].split(',')
-            for keyword in keywords:
-                page['keywords'].append(keyword.strip())
-
-        # -- 取出記者 ---
-        author = article_content.find('span', class_='writer').text.strip()
-        page['authors'] = re.findall(r'文／記者(\w*)', author)
-        
-        # -- 取出視覺資料連結（圖片） ---
-        page['visual_contents'] = list()
-        visuals = article_content.find_all('span', class_=['ph_b', 'ph_d1'])
-        for visual in visuals:
-            img = visual.find('img')
-            if visual.find('span', class_='ph_d'):
-                caption = visual.find('span', class_='ph_d').text.strip()
-            page['visual_contents'].append(
-                {
-                    'type': 1,
-                    'visual_src': img['src'],
-                    'caption': caption if (caption) else ''
-                })
-        return page
-
-    def __playing_category(self, soup):
-        """
-        取出 playing 類別需要的資料內容
-        """
-        page = dict()
-        article_title = soup.find('div', class_='article_header')
-        page['title'] = article_title.h1.text.strip()
-        article_content = soup.find('div', itemprop='articleBody').find('div', class_='text')
-        p_tags = article_content.find_all('p',recursive=False)
-        page['body'] = "\n".join([p.text.strip() for p in p_tags if len(p.text) > 0])
-        time_string = soup.find('meta', property='article:published_time')
-        page['publish_time'] = strftime('%Y-%m-%d %H:%M:%S', strptime(time_string['content'][:-7], '%Y-%m-%dT%H:%M:%S'))
-        
-        # --- 取出關鍵字 ---
-        page['keywords'] = list()
-        if soup.find('div', class_='keyword boxTitle'):
-            keywords = soup.find('div', class_='keyword boxTitle').find_all('a')
-            for keyword in keywords:
-                page['keywords'].append(keyword.text.strip())
-        elif soup.find('meta', attr={'name':'keywords'}):
-            # 2018-11-18 自由時報全類別改版移除關鍵字區塊，改由 Meta 取得
-            meta_keywords = soup.find('meta', attr={'name':'keywords'})
-            keywords = meta_keywords['content'].split(',')
-            for keyword in keywords:
-                page['keywords'].append(keyword.strip())
-
-        # -- 取出記者 ---
-        author = article_title.find('span').text.strip()
-        page['authors'] = re.findall(r'文／記者(\w*)', author)
-        
-        # -- 取出視覺資料連結（圖片） ---
-        page['visual_contents'] = list()
-        visuals = article_content.find_all('span', class_=['ph_b', 'ph_d1'])
-        for visual in visuals:
-            img = visual.find('img')
-            if visual.find('span', class_='ph_d'):
-                caption = visual.find('span', class_='ph_d').text.strip()
-            else:
-                caption = ""
-            page['visual_contents'].append(
-                {
-                    'type': 1,
-                    'visual_src': img['src'],
-                    'caption': caption
-                })
-        return page
-
-    def __health_category(self, soup):
-        """
-        取出 health 類別需要的資料內容
-        """
-        page = dict()
-        article = soup.find('div', class_='whitecon articlebody')
-        page['title'] = article.h1.text.strip()
-        article_content = soup.find('div', itemprop='articleBody')
-        p_tags = article_content.find_all('p',recursive=False)
-        page['body'] = "\n".join([p.text for p in p_tags if len(p.text) > 0])
-        page['publish_time'] = article_content.find_all('span')[0].text + ':00'
-
-        # --- 取出關鍵字 ---
-        page['keywords'] = list()
-        if article.find('div', class_='keyword boxTitle'):
-            keywords = article.find('div', class_='keyword boxTitle').find_all('a')
-            for keyword in keywords:
-                page['keywords'].append(keyword.text.strip())
-        elif soup.find('meta', attr={'name':'keywords'}):
-            # 2018-11-18 自由時報全類別改版移除關鍵字區塊，改由 Meta 取得
-            meta_keywords = soup.find('meta', attr={'name':'keywords'})
-            keywords = meta_keywords['content'].split(',')
-            for keyword in keywords:
-                page['keywords'].append(keyword.strip())
-        
-        # -- 取出記者 ---
-        page['authors'] = self.extract_author(page['body'])
-        return page
-
-    def __partners_category(self, soup):
-        """
-        取出 partners 類別需要的資料內容
-        """
-        page = dict()
-        #news
-        page['title'] = soup.h1.text.strip()
-        page['publish_time'] = re.sub(r'\|[ ]+', '', soup.find('small').find_all('span')[1].text)
-        page['keywords'] = [x.text for x in soup.find('div', class_='keyword').find_all('a')]
-        page['authors'] = re.compile(r"記者(\w*)").findall(soup.find('small').text)
-
-        # -- 取出視覺資料連結（圖片） ---
-        page['visual_contents'] = list()
-
-        imgs = soup.find_all('div', class_='pic')
-        for img in imgs:
-            page['visual_contents'].append(
-                {
-                    'type': 1,
-                    'visual_src': img.img['src'],
-                    'caption': img.text
-                })
-
-        # --- 取出內文 ---
-        while soup.find('span') != None:
-            soup.find('span').decompose()
-
-        article_content = [x.text for x in soup.find('div', class_='text').find_all('p', recursive = False) if x.text!='' and x.text.find('\u3000\n')<0 and x.text.find('往下閱讀')<0]
-        page['body'] = re.sub(r'[\n]+','\n', "\n".join(article_content))
-        return page
-    
-    def fetch_news_content(self, category, soup):
+    def fetch_news_content(self, soup):
         """
         取出網頁中的新聞內容
 
         Keyword arguments:
-            category (string) -- 類別
             soup (beautifulsoup) -- 已經 parse 過的 BeautifulSoup 物件
         """
+        # 看到下列話句，後面的都不看
+        break_contents = ['見前文：',
+                          '成為粉絲，看更多汽車情報->《自由時報汽車頻道粉絲團》',
+                          '\n    一手掌握經濟脈動\n    點我訂閱自由財經Youtube頻道\n']
         news_page = dict()
-        if category == 'news':
-            news_page = self.__news_category(soup)
-        elif category == 'ent':
-            news_page = self.__ent_category(soup)
-        elif category == 'ec':
-            news_page = self.__ec_category(soup)
-        elif category == 'sports':
-            news_page = self.__sports_category(soup)
-        elif category == 'talk':
-            news_page = self.__talk_category(soup)
-        elif category == 'istyle':
-            news_page = self.__istyle_category(soup)
-        elif category == '3c':
-            news_page = self.__3c_category(soup)
-        elif category == 'market':
-            news_page = self.__market_category(soup)
-        elif category == 'auto':
-            news_page = self.__auto_category(soup)
-        elif category == 'playing':
-            news_page = self.__playing_category(soup)
-        elif category == 'health':
-            news_page = self.__health_category(soup)
-        elif category == 'partners':
-            news_page = self.__partners_category(soup)
+        # --- 取出標題 ---
+        news_page['title'] = soup.h1.text.strip()
+        # --- 取出內文 ---
+        soup_content = soup.find('div', class_='text')
+        p_tags = soup_content.find_all('p', recursive=False)
+        p_content = [p.text for p in p_tags if not p.has_attr('class') and not p.has_attr('style')
+                     and p.img is None and p.br is None]
+        actual_contents = []
+        for content in p_content:
+            if content in break_contents:
+                break
+            else:
+                actual_contents.append(content)
+        news_page['body'] = "\n".join(actual_contents)
+
+        # --- 取出關鍵字 ---
+        news_page['keywords'] = list()
+        keyword_scrips = [x.text for x in soup.findAll('script') if x.text.find('"keywords":')>0]
+        if len(keyword_scrips) > 0:
+            kw_str = keyword_scrips[0]
+            kw_list = kw_str.split('keywords": "')[1].split('"')[0].split(',')
+            news_page['keywords'] = [x for x in kw_list if x != '']
+        else:
+            news_page['keywords'] = []
+
+        # -- 取出發布時間 ---
+        time_section = soup.find(class_='time')
+        news_page['publish_time'] = ' '.join(time_section.find(text=True, recursive=False).strip().split(' ')[:2])+':00'
+        # -- 取出記者 ---
+        if soup.find(class_='author') is not None:
+            author = soup.find(class_='author').text.strip()
+            # 為了避免區塊性的作者
+            author = [x for x in author.split('\n') if x is not ''][0]
+            news_page['authors'] = re.findall(r'文／記者(\w*)', author)
+            if len(news_page['authors']) == 0:
+                # e.g. 3C科技頻道／綜合報導，擷取前半部
+                news_page['authors'] = [author.split('／')[0]]
+        elif soup.find(class_='auther') is not None:
+            author = soup.find(class_='auther').text.strip()
+            # 為了避免區塊性的作者
+            author = [x for x in author.split('\n') if x is not ''][0]
+            news_page['authors'] = re.findall(r'文／記者(\w*)', author)
+            if len(news_page['authors']) == 0:
+                # e.g. 3C科技頻道／綜合報導，擷取前半部
+                news_page['authors'] = [author.split('／')[0]]
+        else:
+            news_page['authors'] = []
+        
+        # -- 取出視覺資料連結（圖片） ---
+        news_page['visual_contents'] = list()
+
+        visuals = soup.find_all('span', class_='ph_b')
+        for visual in visuals:
+            img = visual.find('img')
+            # 找圖片網址
+            if img.has_attr('data-original'):
+                img_url = img['data-original']
+            elif img.has_attr('src'):
+                img_url = img['src']
+            else:
+                continue
+            # 找圖片文字
+            if visual.find('span', class_='ph_d') is not None:
+                caption = visual.find('span', class_='ph_d').text.strip()
+            else:
+                caption = ''
+            news_page['visual_contents'].append(
+                {
+                    'type': 1,
+                    'visual_src': img_url,
+                    'caption': caption
+                })
         return news_page
     
-    def extract_type(self, url):
-        """
-        萃取網址 domain 第一段作為類別
-
-        Keyword arguments:
-            url (string) -- 要進行萃取的網址
-        """
-        hostname = urlparse(url).hostname
-        page_type = hostname.split('.')[0]
-        return page_type
-
     def fetch_publish_time(self):
         """
         發佈時間併入各個類別中爬梳
@@ -549,8 +140,7 @@ class LtnPageCrawler(BasePageCrawler):
         pass
     
     def extract_author(self, content):
-        author = self.regex_pattern.findall(content)
-        return author
+        pass
 
     def compress_html(self, page_html):
         """
@@ -589,8 +179,7 @@ class LtnPageCrawler(BasePageCrawler):
             try:
                 status_code, html_content = self.fetch_html(row['url'])
                 if status_code == requests.codes.ok:
-                    page_type = self.extract_type(html_content['redirected_url'])
-                    print('crawling...[{}] id: {}'.format(page_type, row['id']))
+                    print('crawling...id: {}'.format(row['id']))
 
                     if page_raw:
                         news_page_raw = dict()
@@ -602,7 +191,7 @@ class LtnPageCrawler(BasePageCrawler):
                         print('Save ' + str(row['id']) + ' page Raw.')
                     
                     soup = BeautifulSoup(html_content['html'], 'html.parser')
-                    news_page = self.fetch_news_content(page_type, soup)
+                    news_page = self.fetch_news_content(soup)
                     news_page['list_id'] = row['id']
                     news_page['url'] = row['url']
                     news_page['url_md5'] = row['url_md5']
@@ -666,20 +255,3 @@ class LtnPageCrawler(BasePageCrawler):
                 self.floodfire_storage.update_list_errorcount(row['url_md5'])
                 pass
         self.logme.info('Crawled ' + str(crawl_count) + ' ' + self.code_name + '-news lists.')
-        
-        # 單頁測試
-        # status_code, html_content = self.fetch_html('http://auto.ltn.com.tw/news/11187/2')
-        # if status_code == requests.codes.ok:
-        #     page_type = self.extract_type(html_content['redirected_url'])
-        #     soup = BeautifulSoup(html_content['html'], 'html.parser')
-        #     news_page = self.fetch_news_content(page_type, soup)
-        #     print(news_page)
-        #     # 儲存圖片或影像資訊
-        #     if page_visual and len(news_page['visual_contents']) > 0:
-        #         for vistual_row in news_page['visual_contents']:
-        #             vistual_row['list_id'] = 100
-        #             vistual_row['url_md5'] = '60420fb89e8141139755f7f99ddf8e4e'
-        #             self.floodfire_storage.insert_visual_link(vistual_row)
-
-            # minhtml = self.compress_html(html_content['html'])
-            # print(minhtml)
