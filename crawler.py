@@ -25,6 +25,9 @@ from floodfire_crawler.engine.tsm_list_crawler import TsmListCrawler
 from floodfire_crawler.engine.tsm_page_crawler import TsmPageCrawler
 from floodfire_crawler.engine.setn_list_crawler import SetnListCrawler
 from floodfire_crawler.engine.setn_page_crawler import SetnPageCrawler
+from floodfire_crawler.engine.tvbs_list_crawler import TVBSListCrawler
+from floodfire_crawler.engine.tvbs_page_crawler import TVBSPageCrawler
+
 
 class Crawler():
     def __init__(self, args):
@@ -148,7 +151,7 @@ class Crawler():
         elif self.args.typeof == 'page':
             tsc = TsmPageCrawler(self.config, self.logme)
             tsc.run(self.args.raw, self.args.diff, self.args.visual)
-            
+
     def __setn(self):
         """
         三立新聞 執行區間
@@ -159,6 +162,17 @@ class Crawler():
         elif self.args.typeof == 'page':
             spc = SetnPageCrawler(self.config, self.logme)
             spc.run(self.args.raw, self.args.diff, self.args.visual)
+
+    def __tvbs(self):
+        """
+        TVBS新聞 執行區間
+        """
+        if self.args.typeof == 'list':
+            tlc = TVBSListCrawler(self.config)
+            tlc.run()
+        elif self.args.typeof == 'page':
+            tpc = TVBSPageCrawler(self.config, self.logme)
+            tpc.run(self.args.raw, self.args.diff, self.args.visual)
 
     def main(self):
 
@@ -191,6 +205,10 @@ class Crawler():
 
         if self.args.media == 'setn':
             self.__setn()
+
+        if self.args.media == 'tvbs':
+            self.__tvbs()
+
 
 if __name__ == '__main__':
     parser = ArgumentParser(description="水火新聞爬蟲")
