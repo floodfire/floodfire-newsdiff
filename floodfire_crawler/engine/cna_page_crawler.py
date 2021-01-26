@@ -84,14 +84,6 @@ class CnaPageCrawler(BasePageCrawler):
                     if author_in_parenthesis[i] not in get_author:
                         get_author.append(author_in_parenthesis[i])
 
-#            name = first_line_author[1][:3].replace('、','')
-#            get_author.append(first_line_author[1][:3])
-#        if len(author_in_parenthesis) >1:
-#            for i in range(1,len(author_in_parenthesis)):
-#                if i == len(author_in_parenthesis):
-#                    get_author.append(author_in_parenthesis[i])
-#                else:
-#                    get_author.append(author_in_parenthesis[i][:3])
         for i in range(len(get_in_parenthesis)):
             if '譯者：' in get_in_parenthesis[i]:
                 author_list = get_in_parenthesis[i].split('/')
@@ -123,10 +115,14 @@ class CnaPageCrawler(BasePageCrawler):
         page['visual_contents'] = list()
         for i in range(len(image_list)):
             img_content = image_list[i].find('img')
+            if image_list[i].find('div',class_='picinfo') is not None:
+                caption = image_list[i].find('div',class_='picinfo').text
+            else:
+                caption = ''
             page['visual_contents'].append({
                     'type': 1,
                     'visual_src': img_content['data-src'] if 'data-src' in str(img_content) else img_content['src'],
-                    'caption': image_list[i].find('div',class_='picinfo').text
+                    'caption': caption
                 })
 
         # --- 取出影片數 ---

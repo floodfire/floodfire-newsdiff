@@ -58,7 +58,14 @@ class CntPageCrawler(BasePageCrawler):
         page['title'] = soup.find('h1').text.strip()
         # --- 取出內文 ---
         article_content = soup.find('div', {'class', 'article-body'}).find_all('p')
-        page['body'] = "\n".join([x.text for x in article_content if x.text!=''])
+        regrex_pattern = re.compile(pattern = "["
+        "\U0001F600-\U0001F64F"  # emoticons
+        "\U0001F300-\U0001F5FF"  # symbols & pictographs
+        "\U0001F680-\U0001F6FF"  # transport & map symbols
+        "\U0001F1E0-\U0001F1FF"  # flags (iOS)
+                           "]+", flags = re.UNICODE)
+        content = "\n".join([x.text for x in article_content if x.text!=''])
+        page['body'] = regrex_pattern.sub('',content)
 
         # --- 取出發布時間 ---
         page['publish_time'] = self.fetch_publish_time(soup)
