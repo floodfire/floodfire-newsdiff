@@ -86,10 +86,10 @@ class ApdPageCrawler(BasePageCrawler):
         report['visual_contents'] = [{
             'type': 1,
             'visual_src': i['url'],
-            'caption': i['caption']
+            'caption': i['caption'] if 'caption'  in i else '',
         } for i in image]
 
-        if len(res_json['promo_items']) == 0:
+        if 'promo_items' not in res_json or len(res_json['promo_items']) == 0:
             report['video'] = 0
             return report
 

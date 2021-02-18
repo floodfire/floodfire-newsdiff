@@ -48,9 +48,26 @@ class UdnPageCrawler(BasePageCrawler):
         
     def fetch_news_content(self, soup):
         myjson_str = [x for x in soup.find_all('script') if x.has_attr('type') and x['type'] == 'application/ld+json'][0]
-        myjson = json.loads(myjson_str.text.replace('//', '').replace('\n', '').replace('\r', ''))
+        myjson_str_list = myjson_str.text.split('\r\n')
+        content_list = []
+        # 去除註解
+        for mystring in myjson_str_list:
+            is_outside = True
+            is_add = True
+            for i in range(len(mystring)):
+                chat_txt = mystring[i]
+                if chat_txt == '"':
+                    is_outside = not is_outside
+                if chat_txt == '/' and is_outside:
+                    content_list.append(mystring[:i].replace('\t', '  '))
+                    is_add = False
+                    break
+            if is_add:
+                content_list.append(mystring.replace('\t', '  '))
+
+        myjson = json.loads(''.join(content_list))
         if type(myjson) == list:
-            myjson = myjson[-1]
+            myjson = myjson[0]
 
         page = {}
         page['title'] = myjson['headline']
@@ -65,15 +82,14 @@ class UdnPageCrawler(BasePageCrawler):
         # --- 取出圖片數 ---
         img_raws = soup.select('figure')
         pic_list = list()
-        if(len(img_raws)>0):
-            for img_raw in img_raws:
-                if img_raw.find('div', {'class', 'imgbox'}) is None:
-                    if img_raw.a is not None:
-                        pic_list.append({'url':img_raw.a['href'], 'desc':img_raw.find('figcaption').text})
-                    elif img_raw.img is not None:
-                        img_url = img_raw.img['src'] if img_raw.img.has_attr('src') else img_raw.img['data-src']
-                        img_desc = img_raw.img['title'] if img_raw.img.has_attr('title') else img_raw.text
-                        pic_list.append({'url':img_url, 'desc':img_desc})
+        for img_raw in img_raws:
+            if img_raw.find('div', {'class', 'imgbox'}) is None:
+                if img_raw.a is not None and img_raw.has_attr('href'):
+                    pic_list.append({'url':img_raw.a['href'], 'desc':img_raw.find('figcaption').text})
+                elif img_raw.img is not None:
+                    img_url = img_raw.img['src'] if img_raw.img.has_attr('src') else img_raw.img['data-src']
+                    img_desc = img_raw.img['title'] if img_raw.img.has_attr('title') else img_raw.text
+                    pic_list.append({'url':img_url, 'desc':img_desc})
                     
         page['image'] = len(pic_list)
 
@@ -91,15 +107,16 @@ class UdnPageCrawler(BasePageCrawler):
         video_raws = soup.find_all('div', {'class': 'video-container'})
         if(video_raws !=None):
             for video_raw in video_raws:
-                if video_raw.iframe.has_attr('src'):
-                    video_url = video_raw.iframe['src']
-                else:
-                    video_url = None
-                if video_raw.iframe.has_attr('desc'):
-                    video_desc = video_raw.iframe['desc']
-                else:
-                    video_desc = None
-                video_list.append({'url':video_url, 'title':video_desc})
+                if video_raw.iframe is not None:
+                    if video_raw.iframe.has_attr('src'):
+                        video_url = video_raw.iframe['src']
+                    else:
+                        video_url = None
+                    if video_raw.iframe.has_attr('desc'):
+                        video_desc = video_raw.iframe['desc']
+                    else:
+                        video_desc = None
+                    video_list.append({'url':video_url, 'title':video_desc})
         # fb影片
         video_raws = soup.find_all('div', {'class': 'fb-video'})
         if(video_raws !=None):
