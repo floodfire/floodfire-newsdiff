@@ -12,6 +12,7 @@ from floodfire_crawler.core.base_page_crawler import BasePageCrawler
 from floodfire_crawler.storage.rdb_storage import FloodfireStorage
 from floodfire_crawler.service.diff import FloodfireDiff
 import json
+import demoji
 
 class UdnPageCrawler(BasePageCrawler):
 
@@ -19,6 +20,7 @@ class UdnPageCrawler(BasePageCrawler):
         self.code_name = "udn"
         self.floodfire_storage = FloodfireStorage(config)
         self.logme = logme
+        demoji.download_codes()
 
     def fetch_html(self, url):
         """
@@ -151,7 +153,8 @@ class UdnPageCrawler(BasePageCrawler):
         # 如果有轉址
         content_area = soup.find_all('p')
         if 'window.location.href' in content_area[0].text:
-            page['body'] = content_area[0].text
+            content = content_area[0].text
+            page['body'] = demoji.replace(content, '')
         else:
             contents = [x.text for x in content_area if x.text != '' and x.text!=' ' and x.text!='\n' and x.p is None and x.script is None]
             # 如果內文只有一張圖
@@ -160,7 +163,8 @@ class UdnPageCrawler(BasePageCrawler):
                 return page
             if(contents[0][0]==' '):
                 contents[0] = contents[0][1:]
-            page['body'] = ('\n').join(contents)
+            content = ('\n').join(contents)
+            page['body'] = demoji.replace(content, '')
 
         return page   
 

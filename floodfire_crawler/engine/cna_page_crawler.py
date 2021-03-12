@@ -10,6 +10,7 @@ from random import randint
 from floodfire_crawler.core.base_page_crawler import BasePageCrawler
 from floodfire_crawler.storage.rdb_storage import FloodfireStorage
 from floodfire_crawler.service.diff import FloodfireDiff
+import demoji
 
 class CnaPageCrawler(BasePageCrawler):
 
@@ -17,6 +18,7 @@ class CnaPageCrawler(BasePageCrawler):
         self.code_name = "cna"
         self.floodfire_storage = FloodfireStorage(config)
         self.logme = logme
+        demoji.download_codes()
 
     def fetch_html(self, url):
         """
@@ -53,7 +55,7 @@ class CnaPageCrawler(BasePageCrawler):
 
         # --- 取出內文 ---
         content = all_article.find('div', class_='paragraph').text
-        page['body'] = content
+        page['body'] = demoji.replace(content, '')
 
         # --- 取出發布時間 ---
         page['publish_time'] = self.fetch_publish_time(all_article)
