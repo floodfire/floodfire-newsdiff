@@ -183,6 +183,7 @@ class CnaPageCrawler(BasePageCrawler):
     
     def fetch_publish_time(self, soup):
         time = soup.find('div', class_='updatetime').text.strip()
+        time = time.split('（')[0]
         news_time = strftime('%Y-%m-%d %H:%M:%S', strptime(time[time.find('：')+1:], '%Y/%m/%d %H:%M'))
         return(news_time)
     
