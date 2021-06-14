@@ -60,9 +60,9 @@ class LtnPageCrawler(BasePageCrawler):
                           '\n    一手掌握經濟脈動\n    點我訂閱自由財經Youtube頻道\n']
         news_page = dict()
         # --- 取出標題 ---
-        news_page['title'] = soup.h1.text.strip()
+        news_page['title'] = soup.find_all('h1')[-1].text.strip()
         # --- 取出內文 ---
-        soup_content = soup.find('div', class_='text')
+        soup_content = soup.find_all('div', class_='text')[-1]
         p_tags = soup_content.find_all('p', recursive=False)
         p_content = [p.text for p in p_tags if not p.has_attr('class') and not p.has_attr('style')
                      and p.img is None and p.br is None]
@@ -85,7 +85,7 @@ class LtnPageCrawler(BasePageCrawler):
             news_page['keywords'] = []
 
         # -- 取出發布時間 ---
-        time_section = soup.find(class_='time')
+        time_section = soup.find_all(class_='time')[-1]
         news_page['publish_time'] = ' '.join(time_section.find(text=True, recursive=False).strip().split(' ')[:2])+':00'
         # -- 取出記者 ---
         if soup.find(class_='author') is not None:
