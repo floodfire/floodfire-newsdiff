@@ -11,7 +11,7 @@ from random import randint
 from floodfire_crawler.core.base_page_crawler import BasePageCrawler
 from floodfire_crawler.storage.rdb_storage import FloodfireStorage
 from floodfire_crawler.service.diff import FloodfireDiff
-
+import demoji
 
 class ApdPageCrawler(BasePageCrawler):
 
@@ -19,6 +19,7 @@ class ApdPageCrawler(BasePageCrawler):
         self.code_name = "apd"
         self.floodfire_storage = FloodfireStorage(config)
         self.logme = logme
+        demoji.download_codes()
 
     def fetch_html(self, url):
         """
@@ -51,13 +52,15 @@ class ApdPageCrawler(BasePageCrawler):
     def fetch_news_content(self, res_json):
         report = {}
         # --- 取出標題 ---
-        report['title'] = res_json['headlines']['basic'].replace('\u3000', '　')
+        title = res_json['headlines']['basic'].replace('\u3000', '　')
+        report['title'] = demoji.replace(title, '')
 
         # --- 取出內文 ---
         mytext = '\n'.join([d['content'] for d in res_json['content_elements'] if d['type'] in ['text', 'raw_html']])
         article = mytext.replace("<br>", "\n").replace("<br />", "\n")
         soup = BeautifulSoup(article, 'lxml')
-        report['body'] = soup.get_text()
+        content = soup.get_text()
+        report['body'] = demoji.replace(content, '')
 
         # --- 取出記者 ---
         # (XXX/XX報導) (曾珮瑛、張世瑜/高雄報導) https://regex101.com/r/DvppFX/1
@@ -75,7 +78,10 @@ class ApdPageCrawler(BasePageCrawler):
         report['publish_time'] = self.fetch_publish_time(res_json['last_updated_date'])
 
         # --- 取出關鍵字 ---
-        report['keywords'] = [tag['text'] for tag in res_json['taxonomy']['tags']]
+        if 'tags' in res_json['taxonomy']:
+            report['keywords'] = [tag['text'] for tag in res_json['taxonomy']['tags']]
+        else:
+            report['keywords'] = []
 
         # --- 取出圖片數 ---
         image = [d for d in res_json['content_elements'] if d['type'] == 'image']
