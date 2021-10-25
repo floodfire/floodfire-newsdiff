@@ -50,7 +50,7 @@ class UdnPageCrawler(BasePageCrawler):
         
     def fetch_news_content(self, soup):
         myjson_str = [x for x in soup.find_all('script') if x.has_attr('type') and x['type'] == 'application/ld+json'][0]
-        myjson_str_list = myjson_str.text.split('\r\n')
+        myjson_str_list = myjson_str.text.replace('\r', '').replace('\t', '').split('\n')
         content_list = []
         # 去除註解
         for mystring in myjson_str_list:
@@ -67,7 +67,7 @@ class UdnPageCrawler(BasePageCrawler):
             if is_add:
                 content_list.append(mystring.replace('\t', '  '))
 
-        myjson = json.loads(''.join(content_list))
+        myjson = json.loads(''.join(content_list), strict=False)
         if type(myjson) == list:
             myjson = myjson[0]
 
