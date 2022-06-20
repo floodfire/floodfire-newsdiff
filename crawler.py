@@ -26,6 +26,7 @@ from floodfire_crawler.engine.tsm_page_crawler import TsmPageCrawler
 from floodfire_crawler.engine.setn_list_crawler import SetnListCrawler
 from floodfire_crawler.engine.setn_page_crawler import SetnPageCrawler
 
+
 class Crawler():
     def __init__(self, args):
         self.args = args
@@ -33,8 +34,12 @@ class Crawler():
         self.config = ConfigParser()
         self.config.read(dir_path + '/config.ini')
 
-        file_handler_err = handlers.RotatingFileHandler(dir_path + '/log/crawler.log', maxBytes=1048576, backupCount=5)
-        file_formatter = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s', '%Y-%m-%d %H:%M:%S')
+        file_handler_err = handlers.RotatingFileHandler(
+            dir_path + '/log/crawler.log', maxBytes=1048576, backupCount=5
+        )
+        file_formatter = logging.Formatter(
+            '%(asctime)s %(name)-12s %(levelname)-8s %(message)s', '%Y-%m-%d %H:%M:%S'
+        )
         file_handler_err.setFormatter(file_formatter)
         self.logme = logging.getLogger(self.args.media)
         self.logme.setLevel(logging.INFO)
@@ -148,7 +153,7 @@ class Crawler():
         elif self.args.typeof == 'page':
             tsc = TsmPageCrawler(self.config, self.logme)
             tsc.run(self.args.raw, self.args.diff, self.args.visual)
-            
+
     def __setn(self):
         """
         三立新聞 執行區間
@@ -191,6 +196,7 @@ class Crawler():
 
         if self.args.media == 'setn':
             self.__setn()
+
 
 if __name__ == '__main__':
     parser = ArgumentParser(description="水火新聞爬蟲")
