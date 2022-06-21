@@ -167,7 +167,7 @@ class ApdPageCrawler(BasePageCrawler):
         # timeString e.g 2022-06-20T12:18:00+08:00
         news_time = strftime(
             '%Y-%m-%d %H:%M:%S',
-            strptime(timeString, '%Y-%m-%dT%H:%M:%S%z')
+            strptime(timeString, '%Y-%m-%dT%H:%M:%S+08:00')
         )
         return(news_time)
 
