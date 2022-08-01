@@ -44,7 +44,7 @@ class ApdListCrawler(BaseListCrawler):
         # 一筆一筆取得資料
         for news_row in news_rows:
             # 取得完整網址及計算其hash
-            page_url = page_base_url + news_row.find("a")["href"]
+            page_url = news_row.find("a")["href"]
             md5hash = md5(page_url.encode('utf-8')).hexdigest()
             # 整理其他資料
             raw = {
