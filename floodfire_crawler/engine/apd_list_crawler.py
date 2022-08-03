@@ -37,8 +37,6 @@ class ApdListCrawler(BaseListCrawler):
     def fetch_list(self, soup):
         # 初始化
         news = []
-        page_base_url = "https://tw.appledaily.com"
-
         # 取得頁面列表
         news_rows = soup.find_all("div", {"id": "infScroll"})
         # 一筆一筆取得資料
@@ -66,7 +64,7 @@ class ApdListCrawler(BaseListCrawler):
             if consecutive > 20:
                 print('News consecutive more than 20, stop crawler!!')
                 break
-            # 網址範例 'https://tw.appledaily.com/realtime/new/42'
+            # 網址範例 'https://www.appledaily.com.tw/realtime/new/42'
             page_url = url+str(page_idx)
             print(page_url)
             sleep(2)
