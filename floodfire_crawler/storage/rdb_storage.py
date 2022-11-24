@@ -5,6 +5,7 @@ import time
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
+
 class FloodfireStorage():
     def __init__(self, config):
         try:
@@ -85,7 +86,7 @@ class FloodfireStorage():
         sql = "UPDATE `list` SET `error_count` = `error_count` + 1 WHERE `url_md5`=%s"
         try:
             self.cur.execute(sql, (url_hash,))
-            self.conn.commit()               
+            self.conn.commit()
 
         except MySQLdb.OperationalError as e:
             print('Error! Update list error_count error!' + e.args[1])
@@ -136,7 +137,7 @@ class FloodfireStorage():
             print('Error! Get source id error!')
         return source_id
 
-    def get_crawllist(self, source_id, page_diff = False, diff_obj = None):
+    def get_crawllist(self, source_id, page_diff=False, diff_obj=None):
         """
         取得待爬的資料內容
 
@@ -150,14 +151,21 @@ class FloodfireStorage():
             sql = "SELECT `id`, `url`, `url_md5`, `crawler_count`, `category` FROM `list` \
                 WHERE `source_id`=%s AND `error_count` < 5 AND \
                 (`crawler_count`= 0 OR `created_at` >= %s)"
-            yesterday_time = (datetime.now()+timedelta(-1)).strftime("%Y-%m-%d %H:%M:%S")
+            start_crawl_time = datetime.strptime(
+                '2022-11-24 16:00:00',
+                '%Y-%m-%d %H:%M:%S'
+            )
+            yesterday_time = (datetime.now()+timedelta(-2))
+            list_start_time = max(yesterday_time, start_crawl_time)
+            list_start_time_str = list_start_time.strftime("%Y-%m-%d %H:%M:%S")
             try:
-                self.cur.execute(sql, (source_id, yesterday_time,))
+                self.cur.execute(sql, (source_id, list_start_time_str,))
                 if self.cur.rowcount > 0:
                     rs = self.cur.fetchall()
                     # Diff時，在黑名單中的類別只會抓第一次
                     bl = diff_obj.black_list[int(source_id)]
-                    rs = [x for x in rs if x['crawler_count']==0 or sum([y in x['category'] for y in bl])  == 0]
+                    rs = [x for x in rs if x['crawler_count'] ==
+                          0 or sum([y in x['category'] for y in bl]) == 0]
             except MySQLdb.OperationalError as e:
                 print('Error! Get crawl list error!' + e.args[1])
         else:
@@ -172,7 +180,7 @@ class FloodfireStorage():
                 print('Error! Get crawl list error!' + e.args[1])
         return rs
 
-    def get_last_page(self, url_hash, publish_time, compared_cols = '*'):
+    def get_last_page(self, url_hash, publish_time, compared_cols='*'):
         """
         取得最後一筆頁面資料
 
@@ -183,8 +191,9 @@ class FloodfireStorage():
         page_data = None
         # 找上一筆的順序：當前月份表->前一個月份表->原始表
         time_obj = datetime.strptime(publish_time, '%Y-%m-%d %H:%M:%S')
-        table_names = ['page_'+publish_time[:7].replace('-','_'),
-                       'page_'+(time_obj + relativedelta(months=-1)).strftime("%Y_%m"),
+        table_names = ['page_'+publish_time[:7].replace('-', '_'),
+                       'page_'+(time_obj + relativedelta(months=-1)
+                                ).strftime("%Y_%m"),
                        'page']
         column_str = '`'+'`, `'.join(compared_cols)+'`'
         exist_table = None
@@ -199,7 +208,7 @@ class FloodfireStorage():
                     exist_table = table_name
                     break
             except MySQLdb.ProgrammingError as e:
-                if (e.args[0]!=1146):
+                if (e.args[0] != 1146):
                     print(e.args[0], e.args[1])
                     print('Error! Get last page error!' + e.args[1])
                     continue
@@ -208,7 +217,7 @@ class FloodfireStorage():
                 continue
         return page_data, exist_table
 
-    def insert_page(self, page_row, table_name = None, diff_vals = (1, None, None)):
+    def insert_page(self, page_row, table_name=None, diff_vals=(1, None, None)):
         """
         新增 news page 資料
 
@@ -217,7 +226,8 @@ class FloodfireStorage():
             page_diff (boolean) -- 是否要Diff            
         """
         if table_name is None:
-            table_name = 'page_'+page_row['publish_time'][:4]+'_'+page_row['publish_time'][5:7]
+            table_name = 'page_' + \
+                page_row['publish_time'][:4]+'_'+page_row['publish_time'][5:7]
 
         sql = "INSERT INTO `"+table_name+"`(`list_id`, `url`, `url_md5`, `redirected_url`, `source_id`, \
         `publish_time`, `title`, `body`, `authors`, `image`, `video`, `keywords`, `created_at`, \
@@ -246,7 +256,7 @@ class FloodfireStorage():
             self.conn.commit()
         except MySQLdb.ProgrammingError as e:
             print(e.args[0], e.args[1])
-            if (e.args[0]==1146):
+            if (e.args[0] == 1146):
                 # 如果為儲存table不存在，則創建新的，然後再嘗試儲存
                 if self.create_page_table(table_name):
                     try:
@@ -257,7 +267,7 @@ class FloodfireStorage():
                         return False
             else:
                 print('Error! Insert new page error!')
-                return False                
+                return False
         except MySQLdb.OperationalError:
             print('Error! Insert new page error!')
             return False
@@ -289,7 +299,7 @@ class FloodfireStorage():
             return False
         return True
 
-    def insert_visual_link(self, visual_row, version = 1):
+    def insert_visual_link(self, visual_row, version=1):
         """
         新增 news page 的原始 media link 資料
 
