@@ -148,15 +148,11 @@ class FloodfireStorage():
         rs = {}
         # Diff時，限定未爬過，或是爬過但在24小時內的list
         if page_diff and diff_obj is not None:
-            sql = "SELECT `id`, `url`, `url_md5`, `crawler_count`, `category` FROM `list` \
-                WHERE `source_id`=%s AND `error_count` < 5 AND \
-                (`crawler_count`= 0 OR `created_at` >= %s)"
-            start_crawl_time = datetime.strptime(
-                '2022-11-24 16:00:00',
-                '%Y-%m-%d %H:%M:%S'
-            )
-            yesterday_time = (datetime.now()+timedelta(-2))
-            list_start_time = max(yesterday_time, start_crawl_time)
+            sql = ("SELECT `id`, `url`, `url_md5`, `crawler_count`, `category` FROM `list` "
+                   + "WHERE `source_id`=%s AND `error_count` < 5 AND "
+                   + "`created_at` >= '2022-11-24 16:00:00' AND "
+                   + "(`crawler_count`= 0 OR `created_at` >= %s);")
+            list_start_time = (datetime.now()+timedelta(-2))
             list_start_time_str = list_start_time.strftime("%Y-%m-%d %H:%M:%S")
             try:
                 self.cur.execute(sql, (source_id, list_start_time_str,))
