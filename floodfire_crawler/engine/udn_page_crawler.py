@@ -141,18 +141,18 @@ class UdnPageCrawler(BasePageCrawler):
                     if video_raw.iframe.has_attr('src'):
                         video_url = video_raw.iframe['src']
                     else:
-                        video_url is None
+                        video_url = None
                     if video_raw.iframe.has_attr('desc'):
                         video_desc = video_raw.iframe['desc']
                     else:
-                        video_desc is None
+                        video_desc = None
                     video_list.append({'url': video_url, 'title': video_desc})
         # fb影片
         video_raws = soup.find_all('div', {'class': 'fb-video'})
         if(video_raws is not None):
             for video_raw in video_raws:
                 video_url = video_raw['data-href']
-                video_desc is None
+                video_desc = None
                 video_list.append({'url': video_url, 'title': video_desc})
 
         page['video'] = len(video_list)
@@ -221,7 +221,7 @@ class UdnPageCrawler(BasePageCrawler):
         if page_diff:
             diff_obj = FloodfireDiff()
         else:
-            diff_obj is None
+            diff_obj = None
         ######Diff#######
         crawl_list = self.floodfire_storage.get_crawllist(
             source_id, page_diff, diff_obj)
@@ -334,7 +334,7 @@ class UdnPageCrawler(BasePageCrawler):
                     )
                     ######Diff#######
                     version = 1
-                    table_name is None
+                    table_name = None
                     diff_vals = (version, None, None)
                     if page_diff:
                         last_page, table_name = self.floodfire_storage.get_last_page(news_page['url_md5'],
