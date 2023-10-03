@@ -336,7 +336,7 @@ class FloodfireStorage():
                 `authors` varchar(255) DEFAULT NULL COMMENT '作者（記者）', \
                 `image` tinyint(1) NOT NULL DEFAULT 0 COMMENT '有無圖片', \
                 `video` tinyint(1) NOT NULL DEFAULT 0 COMMENT '有無影片', \
-                `keywords` varchar(255) DEFAULT NULL COMMENT '新聞關鍵字', \
+                `keywords` varchar(1600) DEFAULT NULL COMMENT '新聞關鍵字', \
                 `created_at` datetime DEFAULT NULL COMMENT '建立時間', \
                 `version` tinyint(4) NOT NULL DEFAULT 1 COMMENT '第幾個版本', \
                 `last_page_id` int(11) DEFAULT NULL COMMENT '前一個版本的page_id', \
