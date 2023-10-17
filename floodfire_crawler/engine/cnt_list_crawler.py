@@ -26,6 +26,7 @@ class CntListCrawler(BaseListCrawler):
         傳回 List 頁面的 HTML
         """
         try:
+            url = url.replace('https://www.chinatimes.com', 'http://34.81.224.1')
             headers = {
                 'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36',
             }

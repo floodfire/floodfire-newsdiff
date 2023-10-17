@@ -29,12 +29,16 @@ class CntPageCrawler(BasePageCrawler):
             url (string) -- 抓取的網頁網址
         """
         try:
+            url = url.replace('https://www.chinatimes.com', 'http://34.81.224.1')
             headers = {
                 'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36',
             }
             response = requests.get(url, headers=headers, timeout=15)
             resp_content = {
-                'redirected_url': response.url, # 取得最後 redirect 之後的真實網址
+                'redirected_url': response.url.replace(
+                    'http://34.81.224.1',
+                    'https://www.chinatimes.com'
+                ), # 取得最後 redirect 之後的真實網址
                 'html': response.text
             }
         except requests.exceptions.HTTPError as err:
