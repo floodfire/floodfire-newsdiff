@@ -64,7 +64,7 @@ class CnaListCrawler(BaseListCrawler):
                 category = category_eng
             raw = {
                 "title": link_a.h2.text.strip().replace("　", " ").replace("\u200b", ""),
-                "url": link_a["href"],
+                "url": url,
                 "url_md5": md5hash,
                 "source_id": 3,
                 "category": category,
