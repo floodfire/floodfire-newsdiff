@@ -223,6 +223,7 @@ class CntPageCrawler(BasePageCrawler):
                                 self.floodfire_storage.update_list_crawlercount(
                                     row["url_md5"]
                                 )
+                                sleep(randint(2, 6))
                                 continue
                             else:
                                 # 出現Diff，儲存

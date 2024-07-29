@@ -10,6 +10,7 @@ from random import randint
 from floodfire_crawler.core.base_page_crawler import BasePageCrawler
 from floodfire_crawler.storage.rdb_storage import FloodfireStorage
 from floodfire_crawler.service.diff import FloodfireDiff
+import json
 
 
 class LtnPageCrawler(BasePageCrawler):
@@ -83,16 +84,10 @@ class LtnPageCrawler(BasePageCrawler):
 
         # --- 取出關鍵字 ---
         news_page["keywords"] = list()
-        keyword_scrips = [
-            x.text for x in soup.findAll("script") if x.text.find('"keywords":') > 0
-        ]
-        if len(keyword_scrips) > 0:
-            kw_str = keyword_scrips[0]
-            kw_list = kw_str.split('keywords": "')[1].split('"')[0].split(",")
-            news_page["keywords"] = [x for x in kw_list if x != ""]
-        else:
-            news_page["keywords"] = []
-
+        meta_keywords = soup.find("meta", {"name": "keywords"})
+        if meta_keywords is not None:
+            kw_str = soup.find("meta", {"name": "keywords"})["content"]
+            news_page["keywords"] = kw_str.split(",")
         # -- 取出發布時間 ---
         time_section = soup.find_all(class_="time")[-1]
         news_page["publish_time"] = (
@@ -247,6 +242,7 @@ class LtnPageCrawler(BasePageCrawler):
                                 self.floodfire_storage.update_list_crawlercount(
                                     row["url_md5"]
                                 )
+                                sleep(randint(2, 6))
                                 continue
                             else:
                                 # 出現Diff，儲存
