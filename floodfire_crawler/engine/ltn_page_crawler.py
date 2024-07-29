@@ -84,20 +84,10 @@ class LtnPageCrawler(BasePageCrawler):
 
         # --- 取出關鍵字 ---
         news_page["keywords"] = list()
-        keyword_scrips = [
-            x.text for x in soup.findAll("script") if x.text.find('"keywords":') > 0
-        ]
-        if len(keyword_scrips) > 0:
-            kw_section = json.loads(keyword_scrips[0])["keywords"]
-            if type(kw_section) == str:
-                news_page["keywords"] = kw_section.split(",")
-            elif type(kw_section) == list:
-                news_page["keywords"] = kw_section
-            else:
-                news_page["keywords"] = []
-        else:
-            news_page["keywords"] = []
-
+        meta_keywords = soup.find("meta", {"name": "keywords"})
+        if meta_keywords is not None:
+            kw_str = soup.find("meta", {"name": "keywords"})["content"]
+            news_page["keywords"] = kw_str.split(",")
         # -- 取出發布時間 ---
         time_section = soup.find_all(class_="time")[-1]
         news_page["publish_time"] = (
