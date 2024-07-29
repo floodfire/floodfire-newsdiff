@@ -10,6 +10,7 @@ from random import randint
 from floodfire_crawler.core.base_page_crawler import BasePageCrawler
 from floodfire_crawler.storage.rdb_storage import FloodfireStorage
 from floodfire_crawler.service.diff import FloodfireDiff
+import json
 
 
 class LtnPageCrawler(BasePageCrawler):
@@ -87,9 +88,13 @@ class LtnPageCrawler(BasePageCrawler):
             x.text for x in soup.findAll("script") if x.text.find('"keywords":') > 0
         ]
         if len(keyword_scrips) > 0:
-            kw_str = keyword_scrips[0]
-            kw_list = kw_str.split('keywords": "')[1].split('"')[0].split(",")
-            news_page["keywords"] = [x for x in kw_list if x != ""]
+            kw_section = json.loads(keyword_scrips[0])["keywords"]
+            if type(kw_section) == str:
+                news_page["keywords"] = kw_section.split(",")
+            elif type(kw_section) == list:
+                news_page["keywords"] = kw_section
+            else:
+                news_page["keywords"] = []
         else:
             news_page["keywords"] = []
 
@@ -247,6 +252,7 @@ class LtnPageCrawler(BasePageCrawler):
                                 self.floodfire_storage.update_list_crawlercount(
                                     row["url_md5"]
                                 )
+                                sleep(randint(2, 6))
                                 continue
                             else:
                                 # 出現Diff，儲存
