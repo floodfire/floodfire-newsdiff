@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import requests
+import cloudscraper
 from bs4 import BeautifulSoup
 from hashlib import md5
 from time import sleep
@@ -21,18 +22,23 @@ class CntListCrawler(BaseListCrawler):
 
     def __init__(self, config):
         self.floodfire_storage = FloodfireStorage(config)
+        # 初始化 Cloudscraper
+        self.scraper = cloudscraper.create_scraper()
 
     def fetch_html(self, url):
         """
         傳回 List 頁面的 HTML
         """
         try:
-            url = url.replace("https://www.chinatimes.com", "http://35.236.144.100")
             headers = {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36",
             }
+            # 使用 cloudscraper 發送 GET 請求
+            response = self.scraper.get(url, headers=headers, timeout=15)
 
-            response = requests.get(url, headers=headers, timeout=15)
+            # 確認 HTTP 回應狀態碼是否為 200
+            response.raise_for_status()
+
             resp_content = response.text
         except requests.exceptions.HTTPError as err:
             msg = "HTTP exception error: {}".format(err)
