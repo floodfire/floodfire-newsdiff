@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import requests
+import cloudscraper
 import re
 import htmlmin
 from bs4 import BeautifulSoup
@@ -19,6 +20,8 @@ class CntPageCrawler(BasePageCrawler):
         self.regex_pattern = re.compile(r"var yID = \'(\w.*)\';")
         self.floodfire_storage = FloodfireStorage(config)
         self.logme = logme
+        # 初始化 Cloudscraper
+        self.scraper = cloudscraper.create_scraper()
 
     def fetch_html(self, url):
         """
@@ -28,15 +31,17 @@ class CntPageCrawler(BasePageCrawler):
             url (string) -- 抓取的網頁網址
         """
         try:
-            url = url.replace("https://www.chinatimes.com", "http://35.236.144.100")
             headers = {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36",
             }
-            response = requests.get(url, headers=headers, timeout=15)
+            # 使用 cloudscraper 發送 GET 請求
+            response = self.scraper.get(url, headers=headers, timeout=15)
+
+            # 確認 HTTP 回應狀態碼是否為 200
+            response.raise_for_status()
+
             resp_content = {
-                "redirected_url": response.url.replace(
-                    "http://35.236.144.100", "https://www.chinatimes.com"
-                ),  # 取得最後 redirect 之後的真實網址
+                "redirected_url": response.url,
                 "html": response.text,
             }
         except requests.exceptions.HTTPError as err:
