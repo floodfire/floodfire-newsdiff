@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 import requests
-import cloudscraper
-from bs4 import BeautifulSoup
+from botasaurus.request import Request
+from botasaurus.soupify import soupify
 from hashlib import md5
 from time import sleep
 from urllib.parse import urljoin
@@ -22,19 +22,16 @@ class CntListCrawler(BaseListCrawler):
 
     def __init__(self, config):
         self.floodfire_storage = FloodfireStorage(config)
-        # 初始化 Cloudscraper
-        self.scraper = cloudscraper.create_scraper()
+        # 初始化 Botasaurus
+        self.bota = Request()
 
     def fetch_html(self, url):
         """
         傳回 List 頁面的 HTML
         """
         try:
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36",
-            }
-            # 使用 cloudscraper 發送 GET 請求
-            response = self.scraper.get(url, headers=headers, timeout=15)
+            # 使用 Botasaurus 發送 GET 請求
+            response = self.bota.get(url)
 
             # 確認 HTTP 回應狀態碼是否為 200
             response.raise_for_status()
@@ -101,7 +98,8 @@ class CntListCrawler(BaseListCrawler):
 
             status_code, html_content = self.fetch_html(page_url)
             if status_code == requests.codes.ok:
-                soup = BeautifulSoup(html_content, "html.parser")
+                # 改用 Botasaurus 的 soupify
+                soup = soupify(html_content)
                 news_list = self.fetch_list(soup)
                 # print(news_list)
                 for news in news_list:
@@ -118,7 +116,5 @@ class CntListCrawler(BaseListCrawler):
         """
         status_code, html_content = self.fetch_html(self.url)
         if status_code == requests.codes.ok:
-            soup = BeautifulSoup(html_content, "html.parser")
-            # print(self.fetch_list(soup))
             last_page = 10
             self.make_a_round(1, last_page)

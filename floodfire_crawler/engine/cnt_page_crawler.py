@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 
 import requests
-import cloudscraper
+from botasaurus.request import Request
+from botasaurus.soupify import soupify
 import re
 import htmlmin
-from bs4 import BeautifulSoup
-from urllib.parse import urlparse
 from time import sleep, strftime, strptime
 from random import randint
 from floodfire_crawler.core.base_page_crawler import BasePageCrawler
@@ -20,8 +19,8 @@ class CntPageCrawler(BasePageCrawler):
         self.regex_pattern = re.compile(r"var yID = \'(\w.*)\';")
         self.floodfire_storage = FloodfireStorage(config)
         self.logme = logme
-        # 初始化 Cloudscraper
-        self.scraper = cloudscraper.create_scraper()
+        # 初始化 Botasaurus
+        self.bota = Request()
 
     def fetch_html(self, url):
         """
@@ -31,11 +30,8 @@ class CntPageCrawler(BasePageCrawler):
             url (string) -- 抓取的網頁網址
         """
         try:
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36",
-            }
-            # 使用 cloudscraper 發送 GET 請求
-            response = self.scraper.get(url, headers=headers, timeout=15)
+            # 使用 Botasaurus 發送 GET 請求
+            response = self.bota.get(url)
 
             # 確認 HTTP 回應狀態碼是否為 200
             response.raise_for_status()
@@ -197,7 +193,8 @@ class CntPageCrawler(BasePageCrawler):
                         self.floodfire_storage.insert_page_raw(news_page_raw)
                         print("Save " + str(row["id"]) + " page Raw.")
 
-                    soup = BeautifulSoup(html_content["html"], "html.parser")
+                    # 改用 Botasaurus 的 soupify
+                    soup = soupify(html_content["html"])
                     news_page = self.fetch_news_content(soup)
                     news_page["list_id"] = row["id"]
                     news_page["url"] = row["url"]
