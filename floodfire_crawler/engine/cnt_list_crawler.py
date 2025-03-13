@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
-import requests
-from botasaurus.request import Request
-from botasaurus.soupify import soupify
 from hashlib import md5
 from time import sleep
 from urllib.parse import urljoin
+
+import requests
+from bs4 import BeautifulSoup
+
 from floodfire_crawler.core.base_list_crawler import BaseListCrawler
 from floodfire_crawler.storage.rdb_storage import FloodfireStorage
 
@@ -22,20 +23,18 @@ class CntListCrawler(BaseListCrawler):
 
     def __init__(self, config):
         self.floodfire_storage = FloodfireStorage(config)
-        # 初始化 Botasaurus
-        self.bota = Request()
 
     def fetch_html(self, url):
         """
         傳回 List 頁面的 HTML
         """
         try:
-            # 使用 Botasaurus 發送 GET 請求
-            response = self.bota.get(url)
+            url = url.replace("https://www.chinatimes.com", "http://35.236.144.100")
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36",
+            }
 
-            # 確認 HTTP 回應狀態碼是否為 200
-            response.raise_for_status()
-
+            response = requests.get(url, headers=headers, timeout=15)
             resp_content = response.text
         except requests.exceptions.HTTPError as err:
             msg = "HTTP exception error: {}".format(err)

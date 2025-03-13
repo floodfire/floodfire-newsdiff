@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 
-import requests
-from botasaurus.request import Request
-from botasaurus.soupify import soupify
 import re
-import htmlmin
-from time import sleep, strftime, strptime
 from random import randint
-from floodfire_crawler.core.base_page_crawler import BasePageCrawler
-from floodfire_crawler.storage.rdb_storage import FloodfireStorage
-from floodfire_crawler.service.diff import FloodfireDiff
+from time import sleep, strftime, strptime
+
 import demoji
+import htmlmin
+import requests
+
+from floodfire_crawler.core.base_page_crawler import BasePageCrawler
+from floodfire_crawler.service.diff import FloodfireDiff
+from floodfire_crawler.storage.rdb_storage import FloodfireStorage
 
 
 class CntPageCrawler(BasePageCrawler):
@@ -19,8 +19,6 @@ class CntPageCrawler(BasePageCrawler):
         self.regex_pattern = re.compile(r"var yID = \'(\w.*)\';")
         self.floodfire_storage = FloodfireStorage(config)
         self.logme = logme
-        # 初始化 Botasaurus
-        self.bota = Request()
 
     def fetch_html(self, url):
         """
@@ -30,14 +28,15 @@ class CntPageCrawler(BasePageCrawler):
             url (string) -- 抓取的網頁網址
         """
         try:
-            # 使用 Botasaurus 發送 GET 請求
-            response = self.bota.get(url)
-
-            # 確認 HTTP 回應狀態碼是否為 200
-            response.raise_for_status()
-
+            url = url.replace("https://www.chinatimes.com", "http://35.236.144.100")
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36",
+            }
+            response = requests.get(url, headers=headers, timeout=15)
             resp_content = {
-                "redirected_url": response.url,
+                "redirected_url": response.url.replace(
+                    "http://35.236.144.100", "https://www.chinatimes.com"
+                ),  # 取得最後 redirect 之後的真實網址
                 "html": response.text,
             }
         except requests.exceptions.HTTPError as err:
