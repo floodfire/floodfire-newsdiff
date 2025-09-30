@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 
-import requests
 import re
-import htmlmin
-from bs4 import BeautifulSoup
-from urllib.parse import urlparse
-from time import sleep, strftime, strptime
 from random import randint
+from time import sleep
+
+import htmlmin
+import requests
+from bs4 import BeautifulSoup
+
 from floodfire_crawler.core.base_page_crawler import BasePageCrawler
-from floodfire_crawler.storage.rdb_storage import FloodfireStorage
 from floodfire_crawler.service.diff import FloodfireDiff
-import json
+from floodfire_crawler.storage.rdb_storage import FloodfireStorage
 
 
 class LtnPageCrawler(BasePageCrawler):
@@ -62,9 +62,21 @@ class LtnPageCrawler(BasePageCrawler):
         ]
         news_page = dict()
         # --- 取出標題 ---
-        news_page["title"] = soup.find_all("h1")[-1].text.strip()
+        # 舊版標題是在最後一個 h1；新版標題是在第一個 h1，所以都抓出來比對
+        title_candidates = soup.find_all("h1")
+        title = ""
+        for title_candidate in title_candidates:
+            title_str_candidate = title_candidate.text.strip()
+            if title_str_candidate != "":
+                title = title_str_candidate
+        news_page["title"] = title
         # --- 取出內文 ---
-        soup_content = soup.find_all("div", class_="text")[-1]
+        # 舊版是在最後一個div；新版是在第一個div，所以都抓出來比對
+        content_candidates = soup.find_all("div", class_="text")
+        for content_candidate in content_candidates:
+            if content_candidate.find("p") is not None:
+                soup_content = content_candidate
+                break
         p_tags = soup_content.find_all("p", recursive=False)
         p_content = [
             p.text
@@ -89,7 +101,12 @@ class LtnPageCrawler(BasePageCrawler):
             kw_str = soup.find("meta", {"name": "keywords"})["content"]
             news_page["keywords"] = kw_str.split(",")
         # -- 取出發布時間 ---
-        time_section = soup.find_all(class_="time")[-1]
+        ## 新的ltn時間有可能是 article_time 的第一個 或是 time 的最後一個
+        time_section = soup.find_all(class_="article_time")
+        if len(time_section) == 0:
+            time_section = soup.find_all(class_="time")[-1]
+        else:
+            time_section = time_section[0]
         news_page["publish_time"] = (
             " ".join(
                 time_section.find(text=True, recursive=False).strip().split(" ")[:2]
@@ -113,30 +130,40 @@ class LtnPageCrawler(BasePageCrawler):
             if len(news_page["authors"]) == 0:
                 # e.g. 3C科技頻道／綜合報導，擷取前半部
                 news_page["authors"] = [author.split("／")[0]]
+        elif soup.find(class_="article_edit") is not None:
+            author = soup.find(class_="article_edit").text.strip()
+            # 為了避免區塊性的作者
+            author = [x for x in author.split("\n") if x != ""][0]
+            news_page["authors"] = re.findall(r"文／記者(\w*)", author)
+            if len(news_page["authors"]) == 0:
+                # e.g. 3C科技頻道／綜合報導，擷取前半部
+                news_page["authors"] = [author.split("／")[0]]
         else:
             news_page["authors"] = []
 
         # -- 取出視覺資料連結（圖片） ---
         news_page["visual_contents"] = list()
 
-        visuals = soup.find_all("span", class_="ph_b")
-        for visual in visuals:
-            img = visual.find("img")
-            # 找圖片網址
-            if img.has_attr("data-original"):
-                img_url = img["data-original"]
-            elif img.has_attr("src"):
-                img_url = img["src"]
-            else:
-                continue
-            # 找圖片文字
-            if visual.find("span", class_="ph_d") is not None:
-                caption = visual.find("span", class_="ph_d").text.strip()
-            else:
-                caption = ""
-            news_page["visual_contents"].append(
-                {"type": 1, "visual_src": img_url, "caption": caption}
-            )
+        visual_keys = ["ph_b", "image-popup-vertical-fit"]
+        for key in visual_keys:
+            visuals = soup.find_all(class_=key)
+            for visual in visuals:
+                img = visual.find("img")
+                # 找圖片網址
+                if img.has_attr("data-original"):
+                    img_url = img["data-original"]
+                elif img.has_attr("src"):
+                    img_url = img["src"]
+                else:
+                    continue
+                # 找圖片文字
+                if visual.find("span", class_="ph_d") is not None:
+                    caption = visual.find("span", class_="ph_d").text.strip()
+                else:
+                    caption = ""
+                news_page["visual_contents"].append(
+                    {"type": 1, "visual_src": img_url, "caption": caption}
+                )
         return news_page
 
     def fetch_publish_time(self):
