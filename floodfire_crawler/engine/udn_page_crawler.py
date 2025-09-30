@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
 
-import requests
-import re
-import htmlmin
-from bs4 import BeautifulSoup
-from urllib.parse import urlparse
-from datetime import datetime
-from time import sleep, strftime, strptime
-from random import randint
-from floodfire_crawler.core.base_page_crawler import BasePageCrawler
-from floodfire_crawler.storage.rdb_storage import FloodfireStorage
-from floodfire_crawler.service.diff import FloodfireDiff
 import json
+import re
+from datetime import datetime
+from random import randint
+from time import sleep
+from urllib.parse import urlparse
+
 import demoji
+import htmlmin
+import requests
+from bs4 import BeautifulSoup
+
+from floodfire_crawler.core.base_page_crawler import BasePageCrawler
+from floodfire_crawler.service.diff import FloodfireDiff
+from floodfire_crawler.storage.rdb_storage import FloodfireStorage
 
 
 class UdnPageCrawler(BasePageCrawler):
@@ -85,7 +87,9 @@ class UdnPageCrawler(BasePageCrawler):
             page["authors"] = [full_author]
         else:
             page["authors"] = [
-                (full_author + " ")[full_author.find("記者") + 2 : full_author.find("／")]
+                (full_author + " ")[
+                    full_author.find("記者") + 2 : full_author.find("／")
+                ]
             ]
 
         # --- 取出圖片數 ---
@@ -255,12 +259,16 @@ class UdnPageCrawler(BasePageCrawler):
                             "https?://(?:[-\w/.]|(?:%[\da-fA-F]{2}))+",
                             possible_redirect[0],
                         )[0]
-                        status_code, html_content = self.fetch_html(redirect_url)
-                        html_content["redirected_url"] = redirect_url
-                        if status_code == requests.codes.ok:
-                            soup = BeautifulSoup(html_content["html"], "html.parser")
-                        else:
-                            continue
+                        # 檢查網址如果不為.js結尾，就可能是轉址，重新抓取
+                        if not urlparse(redirect_url).path.endswith(".js"):
+                            status_code, html_content = self.fetch_html(redirect_url)
+                            html_content["redirected_url"] = redirect_url
+                            if status_code == requests.codes.ok:
+                                soup = BeautifulSoup(
+                                    html_content["html"], "html.parser"
+                                )
+                            else:
+                                continue
                     ###
                     news_page = self.fetch_news_content(soup)
 
