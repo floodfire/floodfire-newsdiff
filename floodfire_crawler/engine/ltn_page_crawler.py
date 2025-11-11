@@ -114,32 +114,24 @@ class LtnPageCrawler(BasePageCrawler):
             + ":00"
         )
         # -- 取出記者 ---
+        author = None
         if soup.find(class_="author") is not None:
             author = soup.find(class_="author").text.strip()
-            # 為了避免區塊性的作者
-            author = [x for x in author.split("\n") if x != ""][0]
-            news_page["authors"] = re.findall(r"文／記者(\w*)", author)
-            if len(news_page["authors"]) == 0:
-                # e.g. 3C科技頻道／綜合報導，擷取前半部
-                news_page["authors"] = [author.split("／")[0]]
         elif soup.find(class_="auther") is not None:
             author = soup.find(class_="auther").text.strip()
-            # 為了避免區塊性的作者
-            author = [x for x in author.split("\n") if x != ""][0]
-            news_page["authors"] = re.findall(r"文／記者(\w*)", author)
-            if len(news_page["authors"]) == 0:
-                # e.g. 3C科技頻道／綜合報導，擷取前半部
-                news_page["authors"] = [author.split("／")[0]]
         elif soup.find(class_="article_edit") is not None:
             author = soup.find(class_="article_edit").text.strip()
+        else:
+            news_page["authors"] = []
+        if author is not None:
             # 為了避免區塊性的作者
-            author = [x for x in author.split("\n") if x != ""][0]
+            author_list = [x for x in author.split("\n") if x != ""]
+            if len(author_list) > 0:
+                author = author_list[0]
             news_page["authors"] = re.findall(r"文／記者(\w*)", author)
             if len(news_page["authors"]) == 0:
                 # e.g. 3C科技頻道／綜合報導，擷取前半部
                 news_page["authors"] = [author.split("／")[0]]
-        else:
-            news_page["authors"] = []
 
         # -- 取出視覺資料連結（圖片） ---
         news_page["visual_contents"] = list()

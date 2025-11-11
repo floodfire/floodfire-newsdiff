@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 
-import requests
 import re
-import htmlmin
-from bs4 import BeautifulSoup
-from urllib.parse import urlparse
-from time import sleep, strftime, strptime
 from random import randint
-from floodfire_crawler.core.base_page_crawler import BasePageCrawler
-from floodfire_crawler.storage.rdb_storage import FloodfireStorage
-from floodfire_crawler.service.diff import FloodfireDiff
+from time import sleep, strftime, strptime
+
 import demoji
+import htmlmin
+import requests
+from bs4 import BeautifulSoup
+
+from floodfire_crawler.core.base_page_crawler import BasePageCrawler
+from floodfire_crawler.service.diff import FloodfireDiff
+from floodfire_crawler.storage.rdb_storage import FloodfireStorage
 
 
 class CnaPageCrawler(BasePageCrawler):
@@ -162,10 +163,21 @@ class CnaPageCrawler(BasePageCrawler):
         video_list = soup.find_all("div", {"class": "youtubeBox"})
         page["video"] = len(video_list)
         for i in range(len(video_list)):
+            iframe_tag = video_list[i].find("iframe")
+            if "data-src" in str(iframe_tag):
+                visual_src = iframe_tag["data-src"]
+            elif "src" in str(iframe_tag):
+                if "http" in iframe_tag["src"]:
+                    visual_src = iframe_tag["src"]
+                else:
+                    visual_src = "https:" + iframe_tag["src"]
+            else:
+                visual_src = ""
+
             page["visual_contents"].append(
                 {
                     "type": 2,
-                    "visual_src": video_list[i].find("iframe")["data-src"],
+                    "visual_src": visual_src,
                     "caption": video_list[i]
                     .find_all("div", {"class": "picinfo"})[0]
                     .text
